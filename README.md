@@ -1,41 +1,40 @@
-# DevSkillsLearning Plugins
+# DevSkillsLearning Pipeline
 
-Claude Code skill pack for AI-first Java/Spring Boot microservices development. Provides slash-command skills that automate the SDLC: spec-driven code generation, architectural code review, and more.
+Claude Code plugin pack for AI-first Java/Spring Boot microservices development. Provides slash-command skills that automate the SDLC: spec-driven code generation, architectural code review, and more.
 
 ## Installation
 
 ### Prerequisites
 
-- [Claude Code](https://claude.ai/code) CLI installed (`which claude`)
-- Verify: `claude --version`
+- [Claude Code](https://claude.ai/code) CLI installed and authenticated
+- Verify with: `claude --version`
 
-### Option 1: Install from GitHub (recommended)
+### Option 1: One-command install (recommended)
+
+```sh
+# Clone and install into your project in one go
+git clone https://github.com/DevangChauhan/devskillslearning-plugins.git ~/devskillslearning-pipeline && \
+  cd ~/devskillslearning-pipeline && \
+  ./install.sh /path/to/your-project
+```
+
+### Option 2: Step-by-step install
 
 ```sh
 # Step 1: Clone the marketplace repo
-git clone https://github.com/DevangChauhan/devskillslearning-plugins.git ~/devskillslearning-plugins
+git clone https://github.com/DevangChauhan/devskillslearning-plugins.git ~/devskillslearning-pipeline
 
-# Step 2: Register as a Claude Code marketplace
-claude plugins marketplace add ~/devskillslearning-plugins
+# Step 2: Navigate to your project
+cd /path/to/your-java-project
 
-# Step 3: Install the plugin
-claude plugins install devskillslearning-pipeline
+# Step 3: Register the marketplace (one-time)
+claude plugins marketplace add ~/devskillslearning-pipeline
 
-# Step 4: Activate
-# Type /reload-plugins in your Claude Code session, or restart Claude Code
-```
+# Step 4: Install the plugin at project scope
+claude plugins install devskillslearning-pipeline --scope project
 
-### Option 2: Install from local directory
-
-```sh
-# Step 1: Register the marketplace
-claude plugins marketplace add /path/to/devskillslearning-plugins
-
-# Step 2: Install the plugin
-claude plugins install devskillslearning-pipeline
-
-# Step 3: Activate
-# Type /reload-plugins in your Claude Code session
+# Step 5: Activate in your Claude Code session
+# Type: /reload-plugins
 ```
 
 ### Verify Installation
@@ -48,20 +47,49 @@ claude plugins list
 claude plugins details devskillslearning-pipeline
 ```
 
-In your Claude Code session, run `/reload-plugins`. You should see:
-
-```
-Reloaded: 19 plugins · 8 skills · 34 agents · 4 hooks ...
-```
-
-## Available Skills
-
-After installation, these slash commands become available:
+After running `/reload-plugins` in Claude Code, these slash commands become available:
 
 | Skill | Invocation | What it does |
 |-------|-----------|--------------|
-| Write Code | `/devskillslearning-pipeline:write-code` | Implements a service endpoint or feature following project conventions — reads OpenAPI spec, generates entity → repository → DTO → mapper → service → controller with tests |
-| Code Review | `/devskillslearning-pipeline:code-review` | Reviews code against architecture rules, naming conventions, error handling patterns, and test coverage — reports issues with severity and file:line references |
+| Write Code | `/devskillslearning-pipeline:write-code` | Reads OpenAPI spec, implements full stack: entity → repo → DTO → mapper → service → controller → tests |
+| Code Review | `/devskillslearning-pipeline:code-review` | Reviews code against architecture rules, conventions, error handling — reports issues with file:line references and severity |
+
+## Updating
+
+When new versions are released, update to get the latest skills, conventions, and fixes:
+
+```sh
+# Step 1: Pull latest changes from GitHub
+cd ~/devskillslearning-pipeline
+git pull origin main
+
+# Step 2: Update the plugin in Claude Code
+claude plugins update devskillslearning-pipeline
+
+# Step 3: Activate
+# Type /reload-plugins in Claude Code
+```
+
+To check which version you have:
+
+```sh
+claude plugins list                  # Shows installed version
+claude plugins details devskillslearning-pipeline  # Full details
+```
+
+## Uninstall
+
+```sh
+# Step 1: Uninstall the plugin from your project
+cd /path/to/your-java-project
+claude plugins uninstall devskillslearning-pipeline
+
+# Step 2: Remove the marketplace registry (optional)
+claude plugins marketplace remove devskillslearning-pipeline
+
+# Step 3: Delete the cloned repo (optional)
+rm -rf ~/devskillslearning-pipeline
+```
 
 ## Requirements
 
@@ -80,19 +108,12 @@ The skills automatically enforce these rules:
 |------|------------|
 | Constructor injection only | `write-code` + `code-review` |
 | Records for DTOs | `write-code` + `code-review` |
-| `BigDecimal` for money | `write-code` + `code-review` |
+| `BigDecimal` for money (never `Double`) | `write-code` + `code-review` |
 | `ErrorCode` enum (never ad-hoc strings) | `write-code` + `code-review` |
 | `@Getter`/`@Setter`/`@NoArgsConstructor` on entities (no `@Data`) | `write-code` + `code-review` |
 | Controllers implement OpenAPI-generated interfaces | `write-code` + `code-review` |
 | Controllers → Services → Repositories (no skipping layers) | `code-review` |
-| Packages: `*.controller`, `*.service.impl`, `*.repository`, `*.entity`, `*.dto`, `*.mapper`, `*.exception` | Both + ArchUnit CI |
-
-## Uninstall
-
-```sh
-claude plugins uninstall devskillslearning-pipeline
-claude plugins marketplace remove devskillslearning-pipeline
-```
+| `*.controller`, `*.service.impl`, `*.repository`, `*.entity`, `*.dto`, `*.mapper`, `*.exception` | Both + ArchUnit CI |
 
 ## License
 
