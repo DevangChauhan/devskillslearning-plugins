@@ -1,7 +1,7 @@
 {
   "name": "devskillslearning-pipeline",
-  "version": "1.0.0",
-  "description": "AI-first Java/Spring Boot SDLC automation — write-code, code-review, and more. Encodes EasyBank conventions for spec-driven development.",
+  "version": "3.1.0",
+  "description": "Complete AI-first Java/Spring Boot SDLC automation — 10 skills: scaffold, write-code, code-review, write-tests, refactor, diagnose, secure, deploy, document, migrate. Covers REST, gRPC, GraphQL, WebSocket, reactive, Spring Modulith, event-driven, batch, multi-tenancy. Full enterprise stack: OAuth2/JWT, K8s, CI/CD, Problem Details (RFC 7807), WireMock, test slices, read replicas.",
   "author": {
     "name": "DevSkillsLearning",
     "url": "https://github.com/DevangChauhan/devskillslearning-plugins"

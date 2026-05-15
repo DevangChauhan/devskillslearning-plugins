@@ -1,6 +1,6 @@
 # DevSkillsLearning Pipeline
 
-Claude Code plugin pack for AI-first Java/Spring Boot microservices development. Provides slash-command skills that automate the SDLC: spec-driven code generation, architectural code review, and more.
+Claude Code plugin pack for AI-first Java/Spring Boot development. Provides slash-command skills that automate the SDLC: spec-driven code generation, architectural code review, and more. Adapts to monolith, microservices, and event-driven architectures by discovering project conventions automatically.
 
 ## Installation
 
@@ -51,8 +51,37 @@ After running `/reload-plugins` in Claude Code, these slash commands become avai
 
 | Skill | Invocation | What it does |
 |-------|-----------|--------------|
-| Write Code | `/devskillslearning-pipeline:write-code` | Reads OpenAPI spec, implements full stack: entity → repo → DTO → mapper → service → controller → tests |
-| Code Review | `/devskillslearning-pipeline:code-review` | Reviews code against architecture rules, conventions, error handling — reports issues with file:line references and severity |
+| Scaffold | `/devskillslearning-pipeline:scaffold` | Bootstraps a new Java/Spring Boot project — build file, package structure, base classes, config, Docker, health endpoint |
+| Write Code | `/devskillslearning-pipeline:write-code` | Discovers project conventions, implements full stack: migration → entity → repo → DTO → mapper → service → controller → events → observability → tests |
+| Code Review | `/devskillslearning-pipeline:code-review` | Reviews code against architecture, transactions, N+1 queries, caching, observability, security — reports issues with file:line and severity |
+| Write Tests | `/devskillslearning-pipeline:write-tests` | Generates comprehensive tests: unit, web layer, integration, contract, architecture — with systematic edge case coverage |
+| Refactor | `/devskillslearning-pipeline:refactor` | Safe refactoring with before/after test verification — extract service, split controller, convert to record, restructure packages |
+| Diagnose | `/devskillslearning-pipeline:diagnose` | Systematic root cause analysis for build failures, test failures, startup errors, and runtime issues |
+| Secure | `/devskillslearning-pipeline:secure` | Security hardening: OAuth2/JWT, Keycloak, method-level security, API keys, CORS, rate limiting, audit logging |
+| Deploy | `/devskillslearning-pipeline:deploy` | Deployment artifacts: Docker (multi-stage/distroless), K8s manifests, GitHub Actions CI/CD, Helm charts |
+| Document | `/devskillslearning-pipeline:document` | Generate API docs (OpenAPI 3.0, AsyncAPI), C4 architecture diagrams, ADRs, onboarding READMEs |
+| Migrate | `/devskillslearning-pipeline:migrate` | Automate Spring Boot 2→3, javax→jakarta, Java version upgrades, deprecated API replacement |
+
+## Supported Technology Stack
+
+The plugin adapts to the technologies detected in your project:
+
+| Category | Technologies |
+|----------|-------------|
+| **Build** | Maven, Gradle, Gradle Kotlin DSL |
+| **Java** | 17, 21, 23 |
+| **Spring Boot** | 2.x (javax), 3.x (jakarta) |
+| **Architecture** | Monolith, Spring Modulith, REST Microservices, Event-Driven Microservices |
+| **Execution** | Servlet (Tomcat), Reactive (Netty/WebFlux/R2DBC) |
+| **API Protocols** | REST, gRPC, GraphQL, WebSocket, SSE |
+| **Databases** | PostgreSQL, MySQL, Redis, MongoDB |
+| **Messaging** | Kafka, RabbitMQ |
+| **Security** | OAuth2/JWT, Keycloak, API Keys |
+| **Deployment** | Kubernetes, Docker, GitHub Actions, GitLab CI, Helm |
+| **Observability** | Micrometer, Prometheus, OpenTelemetry, Grafana |
+| **Batch** | Spring Batch, @Scheduled |
+| **Resilience** | Circuit Breaker, Retry, Timeout, Bulkhead, Rate Limiter |
+| **Data Patterns** | Multi-tenancy, Event Sourcing, CDC (Debezium), Schema Registry, CloudEvents |
 
 ## Updating
 
@@ -93,27 +122,30 @@ rm -rf ~/devskillslearning-pipeline
 
 ## Requirements
 
-For the skills to work effectively, your project needs:
+Works with any Java/Spring Boot project. The skills auto-detect:
 
-- Java 21, Spring Boot 3.2.x, Maven multi-module
-- OpenAPI specs at `services/<name>/src/main/resources/openapi/openapi.yaml`
-- The EasyBank package structure (see [docs/CONVENTIONS.md](plugins/devskillslearning-pipeline/docs/CONVENTIONS.md))
-- `easybank-common` library with `ErrorCode` enum, `BaseException`, `ApiResponse<T>`
+- **Build system**: Maven or Gradle (single or multi-module)
+- **Architecture**: Monolith, REST microservices, or event-driven microservices
+- **Project conventions**: Package structure, error handling patterns, response wrappers, base classes
 
-## Conventions Encoded
+No specific project layout or library is required. The skills discover your conventions by scanning the codebase and `CLAUDE.md`.
 
-The skills automatically enforce these rules:
+## Conventions Enforced
+
+The skills automatically enforce these rules (see [docs/CONVENTIONS.md](plugins/devskillslearning-pipeline/docs/CONVENTIONS.md)):
 
 | Rule | Enforced by |
 |------|------------|
 | Constructor injection only | `write-code` + `code-review` |
 | Records for DTOs | `write-code` + `code-review` |
 | `BigDecimal` for money (never `Double`) | `write-code` + `code-review` |
-| `ErrorCode` enum (never ad-hoc strings) | `write-code` + `code-review` |
+| Error code enum (never ad-hoc strings) | `write-code` + `code-review` |
 | `@Getter`/`@Setter`/`@NoArgsConstructor` on entities (no `@Data`) | `write-code` + `code-review` |
-| Controllers implement OpenAPI-generated interfaces | `write-code` + `code-review` |
-| Controllers → Services → Repositories (no skipping layers) | `code-review` |
-| `*.controller`, `*.service.impl`, `*.repository`, `*.entity`, `*.dto`, `*.mapper`, `*.exception` | Both + ArchUnit CI |
+| Controllers implement OpenAPI-generated interfaces (when present) | `write-code` + `code-review` |
+| Controllers to Services to Repositories (no skipping layers) | `code-review` |
+| Proper package placement (`*.controller`, `*.service.impl`, etc.) | Both |
+| Event contracts treated as first-class API (event-driven projects) | `code-review` |
+| Outbox pattern for transactional event publishing (event-driven projects) | `write-code` + `code-review` |
 
 ## License
 
