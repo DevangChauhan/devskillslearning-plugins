@@ -25,6 +25,7 @@ Ask the user (or use defaults marked with *):
 | Execution model | Blocking (Tomcat/JPA) / Reactive (Netty/R2DBC) | Blocking |
 | Message broker | Kafka / RabbitMQ / None | None (Kafka if event-driven) |
 | API protocol | REST / gRPC / GraphQL / REST + gRPC / REST + GraphQL | REST |
+| API spec | OpenAPI / None | OpenAPI (if REST) |
 | API versioning | URI path / Header / None | URI path (`/api/v1/`) |
 | Lombok | Yes / No | Yes |
 | MapStruct | Yes / No | Yes |
@@ -550,8 +551,9 @@ Generate a minimal `CLAUDE.md` in the project root documenting the decisions mad
 - Flyway for migrations, Lombok + MapStruct
 
 ## Conventions
-- See `docs/` for detailed conventions
-- Package-by-layer: controller → service → repository → entity
+- Package-by-layer: controller → service.impl → repository → entity → dto → mapper → config → exception
+- Constructor injection only, records for DTOs, BigDecimal for money, @Getter/@Setter on entities
+- Run `/devskillslearning-pipeline:code-review` before PRs for convention checks
 ```
 
 ### 2i. .gitignore

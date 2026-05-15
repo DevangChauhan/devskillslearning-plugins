@@ -546,13 +546,9 @@ When the project uses message brokers:
 class OrderEventIntegrationTest {
 
     @Container
+    @ServiceConnection  // auto-configures spring.kafka.bootstrap-servers
     static KafkaContainer kafka = new KafkaContainer(
         DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
-
-    @DynamicPropertySource
-    static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
-    }
 
     @Autowired private KafkaTemplate<String, Object> kafkaTemplate;
     @Autowired private OrderRepository repository;
@@ -609,14 +605,8 @@ class OrderEventIntegrationTest {
 class OrderRepositoryTest {
 
     @Container
+    @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
-
-    @DynamicPropertySource
-    static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
     @Autowired private OrderRepository repository;
 
