@@ -8,6 +8,20 @@ type: skill
 
 You are an expert Java/Spring Boot developer bootstrapping a new project. Your goal is to create a production-ready foundation that the `write-code` and `code-review` skills can build on.
 
+## What You Need to Provide
+
+| Input | Required? | Example | Notes |
+|-------|-----------|---------|-------|
+| Group ID | Yes | `com.acme` | Your company's Java package prefix |
+| Artifact ID / service name | Yes | `order-service` | Lowercase, hyphenated |
+| Project description | No | "Manages order lifecycle" | Brief one-liner |
+| Build system | No | Maven (default) | Maven / Gradle / Gradle Kotlin DSL |
+| Architecture type | No | REST Microservices (default) | I'll ask or use defaults for everything else |
+
+**If you're in a hurry**, just say: "Create a new project called order-service for com.acme" and I'll use sensible defaults for everything else (Java 21, Spring Boot 3.x, PostgreSQL, Flyway, Maven, REST microservices).
+
+**I'll ask you about** anything ambiguous (architecture type, execution model, specific integrations). For all other settings (Lombok, MapStruct, Docker, CI/CD), I use the defaults listed below and state my assumptions.
+
 ## Step 1: Gather Requirements
 
 Ask the user (or use defaults marked with *):

@@ -8,6 +8,22 @@ type: skill
 
 You automate Java/Spring Boot version upgrades with safety. Every migration is verified by running tests before and after. Never leave a project in a broken state.
 
+## What You Need to Provide
+
+| Input | Required? | Example | Notes |
+|-------|-----------|---------|-------|
+| Migration target | Yes | "Upgrade from Spring Boot 2.7 to 3.3" or "Migrate Java 11 to 21" | What version you're moving to |
+| What to migrate | Recommended | "The order service module" | Specific module or entire project |
+| Known issues | Recommended | "We use custom Hibernate types that might break" | Heads-up about tricky areas |
+
+**Examples**:
+- "Upgrade the payment service from Spring Boot 2.7.18 to 3.3.5"
+- "Migrate all services from Java 17 to Java 21"
+- "Upgrade the entire monolith from Spring Boot 3.2 to 3.3"
+- "Replace all javax imports with jakarta in the :common module"
+
+**Safety guarantee**: I run the full build BEFORE and AFTER. If anything breaks, I fix the migration issues — never leave a broken build.
+
 ## Step 0: Assess Current State
 
 1. Read `CLAUDE.md` for project conventions

@@ -1374,3 +1374,80 @@ dependencies {
 ```
 
 For Kotlin DSL (`build.gradle.kts`), replace single quotes with double quotes and `implementation` stays the same; use `testImplementation("group:artifact")` form.
+
+---
+
+## GitHub Integration & Project Management
+
+The `github` skill and PR review features integrate with GitHub via MCP tools for full project management automation.
+
+### GitHub MCP Tools
+
+All GitHub operations use the `mcp__plugin_github_github__*` family of tools. The skill auto-detects whether these are available and falls back gracefully if not.
+
+### Issue/Project Management
+
+**Epics**: Tracked as GitHub issues with `epic` label. Contain a description, story checklist, success criteria, and dependencies.
+
+**User Stories**: GitHub issues with `story` label. Must include:
+- User story format (As a / I want / So that)
+- Acceptance criteria (Given/When/Then)
+- Technical notes
+- Definition of Done
+- Link to parent epic via comment
+
+**Bug Tickets**: GitHub issues with `bug` label and severity label (`severity:high`, `severity:medium`, `severity:low`). Must include steps to reproduce, expected vs actual behavior, environment details, and logs/stack traces.
+
+**Label Conventions**:
+| Label | Purpose |
+|-------|---------|
+| `epic` | Large bodies of work spanning multiple stories |
+| `story` | Individual user stories |
+| `bug` | Defect reports |
+| `severity:high` / `severity:medium` / `severity:low` | Bug severity |
+| `tech-debt` | Technical debt and refactoring items |
+| `documentation` | Documentation tasks |
+
+### PR Review Workflow
+
+PR reviews support two entry points:
+
+1. **PR URL**: Parse `owner`, `repo`, `pullNumber` from the URL. Fetch diff, files, check runs, existing reviews via MCP.
+2. **Ticket/Issue ID**: Search for PRs referencing the issue. If one found, review it. If multiple, ask user to choose.
+
+Review submission follows the three-step pending review workflow:
+1. Create a pending review (method=create, no event)
+2. Add inline comments on specific lines (add_comment_to_pending_review)
+3. Submit the review (method=submit_pending, event=APPROVE/REQUEST_CHANGES/COMMENT)
+
+### Ticket-to-Code Workflow
+
+When a user asks to "implement ticket #N":
+
+1. Read the issue (method=get) + comments (method=get_comments)
+2. Check for existing linked PRs
+3. Assign the user if unassigned
+4. Add a progress comment with the branch name
+5. Implement following write-code conventions
+6. Create PR linked via `Closes #N` or `Refs #N`
+7. Update the issue with PR link
+
+### Commands Quick Reference
+
+```sh
+# Read an issue
+gh issue view 15 --repo owner/repo
+
+# List open issues
+gh issue list --repo owner/repo --label story --state open
+
+# Find PR linked to issue
+gh pr list --repo owner/repo --search "fixes #15"
+
+# Create PR from branch
+gh pr create --repo owner/repo --title "Add feature X" --body "Closes #15" --base main --head feature/15-x
+
+# Review PR
+gh pr review 128 --repo owner/repo --approve
+gh pr review 128 --repo owner/repo --request-changes --body "Issues found..."
+```

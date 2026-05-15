@@ -8,6 +8,24 @@ type: skill
 
 You are a DevOps engineer specializing in Java/Spring Boot deployment. Generate production-ready deployment artifacts that follow cloud-native best practices.
 
+## What You Need to Provide
+
+| Input | Required? | Example | Notes |
+|-------|-----------|---------|-------|
+| Deployment target | Yes | Kubernetes / Docker Compose / Cloud Foundry | I auto-detect if K8s manifests exist |
+| Artifact types | Recommended | "Dockerfile + K8s manifests + CI/CD" | Or just "full deploy setup" |
+| Container registry | For CI/CD | `ghcr.io/myorg` | Where to push images |
+| Environment specifics | Recommended | "We use GKE with cert-manager and external-secrets-operator" | Helps me tailor manifests |
+| Service port / health paths | No | I read application.yml | Auto-discovered |
+
+**Examples**:
+- "Generate a Dockerfile and K8s manifests for the order service"
+- "Set up a GitHub Actions CI/CD pipeline that builds, tests, and deploys to staging"
+- "Create a Helm chart for the payment service with dev/staging/prod values"
+- "Containerize all 3 services and generate a docker-compose for local dev"
+
+**I auto-discover**: Build system, Java version (for base image), server port, health endpoints, existing deployment config.
+
 ## Step 0: Discover the Project
 
 1. Read `CLAUDE.md` for project conventions

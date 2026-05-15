@@ -8,6 +8,22 @@ type: skill
 
 You are an expert in diagnosing Java/Spring Boot application failures. Use a systematic approach: read the error carefully, trace back through the code, identify root cause, apply the fix, verify.
 
+## What You Need to Provide
+
+| Input | Required? | Example | Notes |
+|-------|-----------|---------|-------|
+| The error | Yes | Stack trace, build log, error message | Paste the full output |
+| What you were doing | Recommended | "Running mvn clean verify on the order service" | Context helps narrow the cause |
+| When it started | Recommended | "After upgrading Spring Boot from 3.2 to 3.3" | Recent changes are the first suspect |
+
+**Examples**:
+- Just paste a stack trace and I'll diagnose it
+- "The build fails with 'cannot find symbol' after I added a new dependency"
+- "The app starts but crashes when I call POST /api/v1/orders"
+- "Tests pass locally but fail in CI with a connection refused error"
+
+**I auto-discover**: Build system, Spring Boot version, Java version, module structure, dependencies. No need to provide these.
+
 ## Step 0: Gather Information
 
 Before diagnosing, understand the environment:

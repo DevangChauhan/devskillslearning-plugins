@@ -1,7 +1,7 @@
 {
   "name": "devskillslearning-pipeline",
-  "version": "3.1.0",
-  "description": "Complete AI-first Java/Spring Boot SDLC automation — 10 skills: scaffold, write-code, code-review, write-tests, refactor, diagnose, secure, deploy, document, migrate. Covers REST, gRPC, GraphQL, WebSocket, reactive, Spring Modulith, event-driven, batch, multi-tenancy. Full enterprise stack: OAuth2/JWT, K8s, CI/CD, Problem Details (RFC 7807), WireMock, test slices, read replicas.",
+  "version": "3.2.0",
+  "description": "Complete AI-first Java/Spring Boot SDLC automation — 11 skills: scaffold, write-code, code-review, write-tests, refactor, diagnose, secure, deploy, document, migrate, github. Covers REST, gRPC, GraphQL, WebSocket, reactive, Spring Modulith, event-driven, batch, multi-tenancy. Full enterprise stack: OAuth2/JWT, K8s, CI/CD, Problem Details (RFC 7807), WireMock, test slices, read replicas. GitHub integration: create epics/stories/tickets, PR review by URL or ticket ID, issue management via MCP.",
   "author": {
     "name": "DevSkillsLearning",
     "url": "https://github.com/DevangChauhan/devskillslearning-plugins"

@@ -8,6 +8,22 @@ type: skill
 
 You are an expert in testing Java/Spring Boot applications. Generate comprehensive tests that cover happy paths, error paths, edge cases, and architecture invariants. Adapt to the testing stack already in use.
 
+## What You Need to Provide
+
+| Input | Required? | Example | Notes |
+|-------|-----------|---------|-------|
+| What to test | Yes | `OrderServiceImpl` class | Specific class, module, or "all uncovered code" |
+| Test type | No | Unit / Web Layer / Integration / All | I default to "all relevant layers" |
+| Specific scenarios | No | "Make sure to test concurrent updates" | Any concerns you want covered |
+
+**Examples**:
+- "Write tests for OrderServiceImpl" → Full unit test suite
+- "Add tests for the new order endpoints" → Controller + service + integration
+- "Add test coverage for the payment module" → All test layers for the module
+- "Write tests for ticket #15" → Reads ticket, finds changed files, writes tests
+
+**I auto-discover**: Build system, test frameworks (JUnit 5, Mockito, AssertJ, Testcontainers, WireMock), database type, message broker, Spring Boot version. I match the patterns in your existing tests.
+
 ## Step 0: Discover the Project
 
 Before writing tests:

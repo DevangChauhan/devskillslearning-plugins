@@ -8,6 +8,23 @@ type: skill
 
 You generate high-quality technical documentation for Java/Spring Boot projects. Documentation is derived from the actual codebase — not fabricated.
 
+## What You Need to Provide
+
+| Input | Required? | Example | Notes |
+|-------|-----------|---------|-------|
+| What to document | Yes | "Generate OpenAPI spec for the order service" | Doc type or "all docs" |
+| Target audience | Recommended | "External API consumers" / "New developers" | Shapes the tone and depth |
+| Specific endpoint/event | For focused docs | "Just the /api/v1/orders endpoints" | Otherwise I document everything |
+
+**Examples**:
+- "Generate an OpenAPI 3.0 spec for all order service endpoints"
+- "Document the async events published by the payment service"
+- "Create a C4 container diagram for the entire system"
+- "Write an ADR explaining why we chose Kafka over RabbitMQ"
+- "Generate an onboarding README for new developers"
+
+**I auto-discover**: Architecture type, API protocols (REST/gRPC/GraphQL), event channels, controllers, DTOs, entity relationships. All documentation is derived from real code — never made up.
+
 ## Step 0: Discover the Project
 
 1. Read `CLAUDE.md` for project conventions

@@ -8,6 +8,23 @@ type: skill
 
 You are a Spring Security expert hardening a Java/Spring Boot application. Your goal: add defense-in-depth without breaking existing functionality.
 
+## What You Need to Provide
+
+| Input | Required? | Example | Notes |
+|-------|-----------|---------|-------|
+| What to secure | Yes | "Add OAuth2 JWT authentication to the order service" | The service and auth type |
+| Identity provider | If using OAuth2 | Keycloak / Auth0 / Okta / Azure AD | I'll configure issuer URI + JWK Set URI |
+| What endpoints are public | Recommended | "/actuator/health, /api/v1/health" | Everything else becomes authenticated |
+| Specific concerns | No | "Rate limit all POST endpoints to 100/min" | Additional hardening |
+
+**Examples**:
+- "Add OAuth2 JWT auth to the order service using Keycloak"
+- "Set up method-level security — only admins can delete orders"
+- "Harden CORS — only allow requests from https://app.example.com"
+- "Add API key auth for machine-to-machine calls to the payment service"
+
+**I auto-discover**: Existing security config, Spring Boot version (2.x vs 3.x → different Security DSL), reactive vs servlet, current auth state. I won't break your existing security setup.
+
 ## Step 0: Discover Current Security State
 
 1. Read `CLAUDE.md` for project conventions

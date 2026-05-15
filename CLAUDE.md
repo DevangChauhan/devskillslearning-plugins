@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A **Claude Code marketplace** that distributes a single plugin: `devskillslearning-pipeline`. The plugin provides 10 slash-command skills (`scaffold`, `write-code`, `code-review`, `write-tests`, `refactor`, `diagnose`, `secure`, `deploy`, `document`, `migrate`) for AI-assisted Java/Spring Boot development covering the full enterprise SDLC. Skills auto-detect project architecture, execution model, Spring Boot version, build system, and conventions.
+A **Claude Code marketplace** that distributes a single plugin: `devskillslearning-pipeline`. The plugin provides 11 slash-command skills (`scaffold`, `write-code`, `code-review`, `write-tests`, `refactor`, `diagnose`, `secure`, `deploy`, `document`, `migrate`, `github`) for AI-assisted Java/Spring Boot development covering the full enterprise SDLC. Skills auto-detect project architecture, execution model, Spring Boot version, build system, and conventions. GitHub integration via MCP: create epics/stories/tickets, PR review by URL or ticket ID, issue management.
 
 ## Repo structure
 
@@ -23,7 +23,9 @@ plugins/devskillslearning-pipeline/
     deploy/SKILL.md                     # K8s, CI/CD, Docker, Helm
     document/SKILL.md                   # OpenAPI, AsyncAPI, C4 diagrams, ADRs
     migrate/SKILL.md                    # Spring Boot 2→3, javax→jakarta, Java upgrades
-  docs/CONVENTIONS.md                   # Best practices: full enterprise stack (1,300+ lines)
+    github/SKILL.md                     # GitHub integration: epics, stories, PR review
+  README.md                             # Usage guide with quick start and examples
+  docs/CONVENTIONS.md                   # Best practices: full enterprise stack (1,400+ lines)
 install.sh                              # Idempotent install: registers marketplace + installs plugin
 ```
 
@@ -40,6 +42,7 @@ install.sh                              # Idempotent install: registers marketpl
 - `diagnose` is the troubleshooting entry point — classify the failure (build/compile/startup/test/runtime), trace root cause, apply fix, verify.
 - `secure` adds defense-in-depth: OAuth2/JWT, Keycloak, method security, API keys, CORS, rate limiting, audit logging.
 - `deploy` generates cloud-native artifacts: multi-stage Dockerfiles, K8s manifests (Deployment, Service, HPA, PDB, Ingress), GitHub Actions CI/CD, Helm charts.
+- `github` provides full GitHub project management via MCP: create epics/stories/bug tickets with proper templates, read and search issues, update ticket status/assignees/labels, link stories to epics, implement features from ticket IDs, create PRs linked to issues, review PRs by URL or ticket ID with inline comments and formal review submission.
 - CONVENTIONS.md now covers the full enterprise stack: REST, gRPC, GraphQL, WebSocket, reactive, Spring Modulith, security, resilience (circuit breaker/retry/timeout/bulkhead/rate limiter), Redis, Spring Batch, multi-tenancy, i18n, feature flags, event sourcing, CDC (Debezium), Schema Registry, CloudEvents.
 
 ## Testing plugin changes

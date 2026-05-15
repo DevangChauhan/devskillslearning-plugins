@@ -1,12 +1,138 @@
 ---
 name: devskillslearning-pipeline:code-review
-description: Review Java/Spring Boot code against architecture rules, conventions, error handling patterns, test coverage, transaction correctness, N+1 queries, caching, observability, and security. Adapts to monolith, REST microservices, and event-driven architectures. Catches issues before CI does. Use after writing code or before creating a PR.
+description: Review Java/Spring Boot code against architecture rules, conventions, error handling patterns, test coverage, transaction correctness, N+1 queries, caching, observability, and security. Supports reviewing local git changes, GitHub PRs via URL, and PRs linked to issue/ticket IDs. Catches issues before CI does. Use after writing code or before creating a PR.
 type: skill
 ---
 
 # Code Review
 
 You are a senior Java architect reviewing code for a Spring Boot project. Your job is to find issues that CI would catch — package violations, wrong patterns, missing error handling — and issues CI won't catch — business logic leaks, N+1 queries, incorrect transaction boundaries, missing cache invalidation, test gaps, architecture violations.
+
+## What You Need to Provide
+
+You can trigger code review in three ways:
+
+### Option 1: Local Code Review (default)
+
+Just invoke `/devskillslearning-pipeline:code-review` after writing code. I'll review your local changes.
+
+| What you want | What you need to provide |
+|---------------|-------------------------|
+| Review unstaged changes | Nothing — I'll run `git diff` |
+| Review branch changes | Nothing — I'll run `git diff main...HEAD` |
+| Review specific files | File paths or patterns |
+
+### Option 2: PR Review by URL
+
+| What you need to provide | Example |
+|--------------------------|---------|
+| The full PR URL | `https://github.com/owner/repo/pull/42` |
+
+I will parse the URL, fetch the PR diff via GitHub MCP, and apply the full 100+ check review.
+
+### Option 3: PR Review by Ticket/Issue ID
+
+| What you need to provide | Example |
+|--------------------------|---------|
+| The repository and issue number | `owner/repo` and ticket `#15` |
+
+I will find the PR linked to that issue via GitHub MCP, fetch the diff, and review it.
+
+### Quick Examples
+
+```
+# Review local changes (default)
+/devskillslearning-pipeline:code-review
+
+# Review a PR
+/devskillslearning-pipeline:code-review https://github.com/myorg/myservice/pull/128
+
+# Review by ticket
+/devskillslearning-pipeline:code-review review the PR for ticket #42 in myorg/myservice
+
+# Review specific files
+/devskillslearning-pipeline:code-review review only OrderService.java and OrderController.java
+```
+
+---
+
+## Step -1: Remote PR Review (GitHub MCP)
+
+**If the user provided a PR URL or ticket/issue ID**, fetch the code remotely before applying the review rules below.
+
+### From a PR URL
+
+Parse the URL to extract `owner`, `repo`, and `pullNumber`. For example, `https://github.com/myorg/myservice/pull/128` gives:
+- owner: `myorg`
+- repo: `myservice`
+- pullNumber: `128`
+
+Then fetch:
+
+```
+Use: mcp__plugin_github_github__pull_request_read
+  method: get
+  owner: myorg
+  repo: myservice
+  pullNumber: 128
+
+Use: mcp__plugin_github_github__pull_request_read
+  method: get_diff
+  owner: myorg
+  repo: myservice
+  pullNumber: 128
+
+Use: mcp__plugin_github_github__pull_request_read
+  method: get_files
+  owner: myorg
+  repo: myservice
+  pullNumber: 128
+  perPage: 100
+
+Use: mcp__plugin_github_github__pull_request_read
+  method: get_check_runs
+  owner: myorg
+  repo: myservice
+  pullNumber: 128
+```
+
+Also fetch existing reviews and comments to avoid duplicating feedback:
+
+```
+Use: mcp__plugin_github_github__pull_request_read
+  method: get_reviews
+  owner: myorg
+  repo: myservice
+  pullNumber: 128
+
+Use: mcp__plugin_github_github__pull_request_read
+  method: get_review_comments
+  owner: myorg
+  repo: myservice
+  pullNumber: 128
+  perPage: 100
+```
+
+### From a Ticket/Issue ID
+
+First, find the linked PR:
+
+```
+# Option A: Search for PRs that mention the issue
+Use: mcp__plugin_github_github__search_issues
+  query: "repo:myorg/myservice is:pr is:open #42"
+```
+
+Or use git if the repo is locally available:
+```sh
+gh pr list --repo myorg/myservice --search "fixes #42" --state open
+```
+
+If multiple PRs are found, list them and ask the user which one to review. If no PR is found, report that no PR is linked to that ticket yet.
+
+### After Fetching
+
+Read the diff and all changed files. Then proceed with the full review below, applying ALL checks (Step 1 through Security Checks) against the remote code.
 
 ## Step 0: Discover the Project
 
@@ -464,6 +590,95 @@ Output findings as a table:
 | MEDIUM   | AccountService.java:55 | Cache not evicted on entity update | Add @CacheEvict("accounts") |
 | LOW      | Account.java:25 | Missing @Version for optimistic locking | Add @Version Long version field |
 ```
+
+## Submit Review to GitHub
+
+If this review was for a remote PR (fetched via URL or ticket ID), submit the findings to GitHub:
+
+### Create the Review
+
+```
+Use: mcp__plugin_github_github__pull_request_review_write
+  method: create
+  owner: <owner>
+  repo: <repo>
+  pullNumber: <number>
+  event: "APPROVE"              # if no BLOCKER or HIGH issues
+         "REQUEST_CHANGES"       # if any BLOCKER or HIGH issues found
+         "COMMENT"               # if only MEDIUM/LOW issues
+  body: |
+    ## Code Review — devskillslearning-pipeline
+
+    ### Summary
+    - Files reviewed: <count>
+    - BLOCKER: <count>, HIGH: <count>, MEDIUM: <count>, LOW: <count>
+
+    ### Findings
+
+    | Severity | File | Line | Issue | Fix |
+    |----------|------|------|-------|-----|
+    | ...      | ...  | ...  | ...   | ... |
+
+    ### ✅ Strengths
+    - <what was done well>
+
+    ### 🔧 Required Changes
+    <list of BLOCKER and HIGH items that must be fixed>
+
+    ---
+    🤖 Reviewed by [Claude Code](https://claude.com/claude-code) using devskillslearning-pipeline
+```
+
+### Add Inline Comments (for specific lines)
+
+For findings that reference specific lines, add inline comments before submitting:
+
+**Step 1**: Create a pending review (no event):
+```
+Use: mcp__plugin_github_github__pull_request_review_write
+  method: create
+  owner: <owner>
+  repo: <repo>
+  pullNumber: <number>
+  body: "Collecting inline comments..."
+```
+
+**Step 2**: Add inline comments for each issue:
+```
+Use: mcp__plugin_github_github__add_comment_to_pending_review
+  owner: <owner>
+  repo: <repo>
+  pullNumber: <number>
+  path: "<relative-file-path>"
+  body: "**<Severity>**: <issue description>\n\nSuggested fix: <fix>"
+  line: <line-number>
+  side: "RIGHT"
+  subjectType: "LINE"
+```
+
+**Step 3**: Submit the pending review:
+```
+Use: mcp__plugin_github_github__pull_request_review_write
+  method: submit_pending
+  owner: <owner>
+  repo: <repo>
+  pullNumber: <number>
+  event: "REQUEST_CHANGES"   # or "APPROVE" or "COMMENT"
+  body: |
+    ## Final Review Summary
+    <summary text>
+```
+
+### Request Copilot Review (Optional)
+
+```
+Use: mcp__plugin_github_github__request_copilot_review
+  owner: <owner>
+  repo: <repo>
+  pullNumber: <number>
+```
+
+---
 
 ## Auto-Fix Mode
 

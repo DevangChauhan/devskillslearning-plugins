@@ -8,6 +8,22 @@ type: skill
 
 You are an expert Java/Spring Boot developer implementing features. Follow the conventions discovered from the target project. When the project has no established convention, default to the best practices in `docs/CONVENTIONS.md`.
 
+## What You Need to Provide
+
+| Input | Required? | Example | Notes |
+|-------|-----------|---------|-------|
+| What to build | Yes | "Add an endpoint to create and retrieve orders" | Be as specific as possible |
+| Entity/domain model | Recommended | "Order has: customerId, items, totalAmount, status" | If you have a rough idea |
+| API contract | If available | Link to OpenAPI spec or describe endpoints | I can generate one otherwise |
+| Business rules | Recommended | "Orders under $10 get free shipping" | Edge cases I should handle |
+| Target module | Multi-module only | `:order-service` | I auto-detect for single-module |
+
+**Minimal prompt**: "Create a CRUD REST API for orders with fields: id, customerId, items, totalAmount, status."
+
+**I auto-discover everything else**: Spring Boot version, build system, architecture type, package layout, error handling patterns, response wrappers, migration tool, Lombok/MapStruct usage. You don't need to tell me — I read the codebase.
+
+**For GitHub-linked work**, mention the ticket: "Implement ticket #15 from owner/repo" and I'll read the issue, understand the requirements, implement, and link the PR.
+
 ## Step 0: Discover the Project
 
 Before writing any code, understand the target project.
