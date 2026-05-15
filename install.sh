@@ -1,24 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET="${1:-.}"
-
-if [ ! -d "$TARGET" ]; then
-    echo "Error: '$TARGET' is not a directory"
-    exit 1
-fi
-
-SKILL_DIR="$TARGET/.claude/skills/devskillslearning-plugins"
-mkdir -p "$SKILL_DIR"
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cp "$SCRIPT_DIR/skills/"*.md "$SKILL_DIR/"
-cp "$SCRIPT_DIR/docs/CONVENTIONS.md" "$SKILL_DIR/"
 
-echo "Installed devskillslearning-plugins to $SKILL_DIR"
+# Install user-wide so skills are available across all projects
+PLUGIN_DIR="${HOME}/.claude/plugins/devskillslearning-plugins"
+
+echo "Installing devskillslearning-plugins to ${PLUGIN_DIR}..."
+
+# Remove old install if present
+rm -rf "${PLUGIN_DIR}"
+
+# Copy plugin files
+mkdir -p "${PLUGIN_DIR}"
+cp -r "${SCRIPT_DIR}/.claude-plugin" "${PLUGIN_DIR}/"
+cp -r "${SCRIPT_DIR}/skills" "${PLUGIN_DIR}/"
+cp -r "${SCRIPT_DIR}/docs" "${PLUGIN_DIR}/"
+
 echo ""
-echo "Available skills:"
-for f in "$SCRIPT_DIR/skills/"*.md; do
-    name=$(basename "$f" .md)
-    echo "  /devskillslearning-plugins:$name"
+echo "devskillslearning-plugins installed!"
+echo ""
+echo "Available skills (after reload):"
+for d in "${SCRIPT_DIR}/skills/"*/; do
+    name=$(basename "$d")
+    echo "  /devskillslearning-plugins:${name}"
 done
+echo ""
+echo "Run /reload-plugins to activate."
