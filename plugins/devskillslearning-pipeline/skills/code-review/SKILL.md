@@ -1,5 +1,5 @@
 ---
-name: devskillslearning-plugins:code-review
+name: devskillslearning-pipeline:code-review
 description: Review Java/Spring Boot code against EasyBank architecture rules, conventions, error handling patterns, and test coverage. Catches issues before CI does. Use after writing code or before creating a PR.
 type: skill
 ---

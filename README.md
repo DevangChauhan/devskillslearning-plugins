@@ -19,7 +19,7 @@ git clone https://github.com/DevangChauhan/devskillslearning-plugins.git ~/devsk
 claude plugins marketplace add ~/devskillslearning-plugins
 
 # Step 3: Install the plugin
-claude plugins install devskillslearning-plugins
+claude plugins install devskillslearning-pipeline
 
 # Step 4: Activate
 # Type /reload-plugins in your Claude Code session, or restart Claude Code
@@ -32,7 +32,7 @@ claude plugins install devskillslearning-plugins
 claude plugins marketplace add /path/to/devskillslearning-plugins
 
 # Step 2: Install the plugin
-claude plugins install devskillslearning-plugins
+claude plugins install devskillslearning-pipeline
 
 # Step 3: Activate
 # Type /reload-plugins in your Claude Code session
@@ -41,11 +41,11 @@ claude plugins install devskillslearning-plugins
 ### Verify Installation
 
 ```sh
-# List installed plugins — you should see devskillslearning-plugins
+# List installed plugins — you should see devskillslearning-pipeline
 claude plugins list
 
 # Show plugin details
-claude plugins details devskillslearning-plugins
+claude plugins details devskillslearning-pipeline
 ```
 
 In your Claude Code session, run `/reload-plugins`. You should see:
@@ -60,8 +60,8 @@ After installation, these slash commands become available:
 
 | Skill | Invocation | What it does |
 |-------|-----------|--------------|
-| Write Code | `/devskillslearning-plugins:write-code` | Implements a service endpoint or feature following project conventions — reads OpenAPI spec, generates entity → repository → DTO → mapper → service → controller with tests |
-| Code Review | `/devskillslearning-plugins:code-review` | Reviews code against architecture rules, naming conventions, error handling patterns, and test coverage — reports issues with severity and file:line references |
+| Write Code | `/devskillslearning-pipeline:write-code` | Implements a service endpoint or feature following project conventions — reads OpenAPI spec, generates entity → repository → DTO → mapper → service → controller with tests |
+| Code Review | `/devskillslearning-pipeline:code-review` | Reviews code against architecture rules, naming conventions, error handling patterns, and test coverage — reports issues with severity and file:line references |
 
 ## Requirements
 
@@ -69,7 +69,7 @@ For the skills to work effectively, your project needs:
 
 - Java 21, Spring Boot 3.2.x, Maven multi-module
 - OpenAPI specs at `services/<name>/src/main/resources/openapi/openapi.yaml`
-- The EasyBank package structure (see [docs/CONVENTIONS.md](plugins/devskillslearning-plugins/docs/CONVENTIONS.md))
+- The EasyBank package structure (see [docs/CONVENTIONS.md](plugins/devskillslearning-pipeline/docs/CONVENTIONS.md))
 - `easybank-common` library with `ErrorCode` enum, `BaseException`, `ApiResponse<T>`
 
 ## Conventions Encoded
@@ -90,8 +90,8 @@ The skills automatically enforce these rules:
 ## Uninstall
 
 ```sh
-claude plugins uninstall devskillslearning-plugins
-claude plugins marketplace remove devskillslearning-plugins
+claude plugins uninstall devskillslearning-pipeline
+claude plugins marketplace remove devskillslearning-pipeline
 ```
 
 ## License

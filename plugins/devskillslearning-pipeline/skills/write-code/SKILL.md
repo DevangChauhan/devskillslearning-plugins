@@ -1,5 +1,5 @@
 ---
-name: devskillslearning-plugins:write-code
+name: devskillslearning-pipeline:write-code
 description: Write Java/Spring Boot implementation code following EasyBank conventions. Use when the user asks to implement an endpoint, feature, or service. Reads OpenAPI specs and generates controller, service, repository, entity, DTO, mapper, and tests.
 type: skill
 ---

@@ -1,5 +1,5 @@
 {
-  "name": "devskillslearning-plugins",
+  "name": "devskillslearning-pipeline",
   "version": "1.0.0",
   "description": "AI-first Java/Spring Boot SDLC automation — write-code, code-review, and more. Encodes EasyBank conventions for spec-driven development.",
   "author": {

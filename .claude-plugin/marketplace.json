@@ -1,12 +1,12 @@
 {
-  "name": "devskillslearning-plugins",
+  "name": "devskillslearning-pipeline",
   "owner": {
     "name": "DevSkillsLearning"
   },
   "plugins": [
     {
-      "name": "devskillslearning-plugins",
-      "source": "./plugins/devskillslearning-plugins",
+      "name": "devskillslearning-pipeline",
+      "source": "./plugins/devskillslearning-pipeline",
       "description": "AI-first Java/Spring Boot SDLC automation — write-code, code-review. Encodes EasyBank conventions for spec-driven development with OpenAPI, ArchUnit, and ErrorCode catalog."
     }
   ]
