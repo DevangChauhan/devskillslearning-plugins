@@ -630,3 +630,6 @@ Then tell the user:
 - How to customize: edit `application.yml` for DB credentials, ports, etc.
 - The health endpoint is at `GET /api/v1/health`
 - Run `/devskillslearning-pipeline:write-code` to start adding features
+
+## Next Step
+After scaffolding, use `/devskillslearning-pipeline:write-code` to implement your first feature on the bootstrapped foundation.

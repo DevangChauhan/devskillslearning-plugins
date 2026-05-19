@@ -547,3 +547,6 @@ act push  # using nektos/act to test GitHub Actions locally
 - [ ] CI: container pushed only on main branch
 - [ ] Secrets referenced via K8s Secrets / external-secrets-operator / Vault — never committed
 - [ ] JVM opts: `-XX:MaxRAMPercentage=75.0`, `-XX:+UseZGC` (Java 21+)
+
+## Next Step
+After deploying, use `/devskillslearning-pipeline:monitor` to set up dashboards and alerting for the deployed service, or `/devskillslearning-pipeline:release` to cut a versioned release.

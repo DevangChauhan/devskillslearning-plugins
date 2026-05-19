@@ -554,3 +554,6 @@ In a Claude Code session, run `/reload-plugins` and then ask: "List my open issu
 - [ ] PR linked to issue via `Closes #N` or `Refs #N`
 - [ ] CI check runs reviewed before approval
 - [ ] Comments are constructive and actionable
+
+## Next Step
+After GitHub operations, use `/devskillslearning-pipeline:write-code` to implement from a ticket, or `/devskillslearning-pipeline:code-review` to review a linked PR.

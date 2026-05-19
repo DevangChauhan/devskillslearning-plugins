@@ -172,3 +172,6 @@ mvn test -Dfailsafe.rerunFailingTestsCount=2
 - [ ] Build/compilation passes after fix
 - [ ] Tests pass after fix
 - [ ] Prevention recommendation given (if applicable)
+
+## Next Step
+After the issue is diagnosed and fixed, use `/devskillslearning-pipeline:write-tests` to add regression tests preventing recurrence, then `/devskillslearning-pipeline:code-review` to verify the fix.

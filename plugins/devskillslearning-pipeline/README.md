@@ -17,6 +17,13 @@ Complete AI-first Java/Spring Boot SDLC automation with GitHub project managemen
 | 9 | `document` | OpenAPI, AsyncAPI, C4 diagrams, ADRs, READMEs | After APIs stabilize |
 | 10 | `migrate` | Automated Spring Boot/Java version upgrades | For version upgrade tasks |
 | 11 | `github` | GitHub project management + PR review via MCP | For ticket/PR workflows |
+| 12 | `monitor` | Metrics, tracing, alerting, Grafana dashboards | Before production deploy |
+| 13 | `design-api` | Contract-first API design (OpenAPI, AsyncAPI, gRPC, GraphQL) | Before implementing endpoints |
+| 14 | `database` | Schema design, query optimization, no-downtime migrations | Before/alongside schema changes |
+| 15 | `resilience` | Circuit breaker, retry, timeout, bulkhead, rate limiter | After adding downstream calls |
+| 16 | `perf-test` | k6/Gatling load tests, JFR/profiling, capacity planning | Before production deploy |
+| 17 | `release` | Semantic versioning, changelogs, release notes, CI release automation | When cutting a release |
+| 18 | `dependency` | OWASP scanning, version catalogs, BOMs, auto-updates | Weekly / before releases |
 
 ---
 
@@ -242,6 +249,13 @@ You don't need to provide these — all skills detect them automatically:
 | `document` | "Generate OpenAPI spec" | Audience, specific endpoints |
 | `migrate` | "Upgrade Spring Boot 2.7 to 3.3" | Module, known tricky areas |
 | `github` | "Create epic in owner/repo" / "Review PR URL" | Ticket details, PR URL |
+| `monitor` | "Add Prometheus metrics" | Metrics backend, SLO targets |
+| `design-api` | "Design REST API for the order service" | Resources, operations, consumers |
+| `database` | "Design schema for payment service" | Database engine, data volumes |
+| `resilience` | "Add circuit breaker to PaymentClient" | Downstream dependencies, thresholds |
+| `perf-test` | "Load test the checkout endpoint" | Target RPS, p99 SLO, OpenAPI spec |
+| `release` | "Release v1.3.0" | Target version, version bump type |
+| `dependency` | "Scan for vulnerabilities" | Specific CVE or dependency concern |
 
 ---
 

@@ -198,3 +198,6 @@ Report what was done:
 - [ ] Formatting applied
 - [ ] Zero behavior change — only structure/names
 - [ ] If extracting to common module: build files updated, CI pipeline still covers it
+
+## Next Step
+After refactoring, use `/devskillslearning-pipeline:write-tests` to ensure refactored code has coverage, then `/devskillslearning-pipeline:code-review` to verify no regressions.

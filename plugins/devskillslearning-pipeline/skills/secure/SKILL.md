@@ -442,3 +442,6 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 - [ ] Tests updated: auth success, 401, 403 test cases
 - [ ] No secrets in code
 - [ ] HTTPS enforced in production
+
+## Next Step
+After security hardening, use `/devskillslearning-pipeline:monitor` to set up observability for the secured endpoints, or `/devskillslearning-pipeline:deploy` to containerize and ship.

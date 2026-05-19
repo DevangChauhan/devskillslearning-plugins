@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A **Claude Code marketplace** that distributes a single plugin: `devskillslearning-pipeline`. The plugin provides 11 slash-command skills (`scaffold`, `write-code`, `code-review`, `write-tests`, `refactor`, `diagnose`, `secure`, `deploy`, `document`, `migrate`, `github`) for AI-assisted Java/Spring Boot development covering the full enterprise SDLC. Skills auto-detect project architecture, execution model, Spring Boot version, build system, and conventions. GitHub integration via MCP: create epics/stories/tickets, PR review by URL or ticket ID, issue management.
+A **Claude Code marketplace** that distributes a single plugin: `devskillslearning-pipeline`. The plugin provides 18 slash-command skills (`scaffold`, `write-code`, `code-review`, `write-tests`, `refactor`, `diagnose`, `secure`, `deploy`, `document`, `migrate`, `github`, `monitor`, `design-api`, `database`, `resilience`, `perf-test`, `release`, `dependency`) for AI-assisted Java/Spring Boot development covering the full enterprise SDLC. Skills auto-detect project architecture, execution model, Spring Boot version, build system, and conventions. GitHub integration via MCP: create epics/stories/tickets, PR review by URL or ticket ID, issue management.
 
 ## Repo structure
 
@@ -24,6 +24,13 @@ plugins/devskillslearning-pipeline/
     document/SKILL.md                   # OpenAPI, AsyncAPI, C4 diagrams, ADRs
     migrate/SKILL.md                    # Spring Boot 2→3, javax→jakarta, Java upgrades
     github/SKILL.md                     # GitHub integration: epics, stories, PR review
+    monitor/SKILL.md                    # Production observability: metrics, tracing, alerting
+    design-api/SKILL.md                 # Contract-first API design: OpenAPI, AsyncAPI, gRPC
+    database/SKILL.md                   # Schema design, query optimization, safe migrations
+    resilience/SKILL.md                 # Resilience4j: circuit breaker, retry, timeout, bulkhead
+    perf-test/SKILL.md                  # k6/Gatling load tests, JFR profiling, capacity planning
+    release/SKILL.md                    # Semantic versioning, changelogs, release notes, CI automation
+    dependency/SKILL.md                 # OWASP scanning, version catalogs, BOMs, Renovate/Dependabot
   README.md                             # Usage guide with quick start and examples
   docs/CONVENTIONS.md                   # Best practices: full enterprise stack (1,400+ lines)
 install.sh                              # Idempotent install: registers marketplace + installs plugin

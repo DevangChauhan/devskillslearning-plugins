@@ -791,3 +791,6 @@ Before finishing:
 - [ ] Test data isolated — no shared mutable state between tests
 - [ ] `@Transactional` on integration tests that modify data (rollback after each test)
 - [ ] Tests compile and pass
+
+## Next Step
+After tests are written and passing, use `/devskillslearning-pipeline:code-review` to review the code before merging.

@@ -683,3 +683,6 @@ Use: mcp__plugin_github_github__request_copilot_review
 ## Auto-Fix Mode
 
 If the user asks you to fix the issues, apply fixes in priority order: BLOCKER → HIGH → MEDIUM. After fixing, run the project's format and build commands (discovered in Step 0) to verify.
+
+## Next Step
+After code review passes, use `/devskillslearning-pipeline:secure` to harden authentication and authorization, or `/devskillslearning-pipeline:deploy` to containerize and ship.

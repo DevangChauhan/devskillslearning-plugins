@@ -289,3 +289,6 @@ mvn org.owasp:dependency-check-maven:check
 - [ ] Full build passes: `mvn clean verify`
 - [ ] `CLAUDE.md` updated with new versions
 - [ ] CI pipeline and Dockerfile updated
+
+## Next Step
+After migration, use `/devskillslearning-pipeline:write-tests` to verify all tests pass with the upgraded versions, then `/devskillslearning-pipeline:code-review` to check for migration-specific issues.

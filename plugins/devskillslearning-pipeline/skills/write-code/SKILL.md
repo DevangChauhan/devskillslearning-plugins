@@ -760,3 +760,6 @@ Before finishing, verify:
 - [ ] Health indicator for critical downstream dependencies
 - [ ] Tests cover happy path AND error cases (not-found, conflict, invalid input, null input)
 - [ ] Build passes
+
+## Next Step
+After implementing, use `/devskillslearning-pipeline:code-review` to review the code against 100+ architectural and security checks, or `/devskillslearning-pipeline:write-tests` to add comprehensive test coverage.

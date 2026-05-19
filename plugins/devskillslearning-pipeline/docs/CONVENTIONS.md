@@ -887,6 +887,59 @@ Rules:
 - Rate limit at both API gateway AND service level for defense-in-depth
 - Graceful shutdown: drain in-flight requests before closing the context
 
+#### Pattern Ordering
+
+Stack patterns outside-in from outermost to innermost: `Retry → CircuitBreaker → TimeLimiter → Bulkhead → actual call`.
+
+```java
+@Bulkhead(name = "payment")
+@TimeLimiter(name = "payment")
+@CircuitBreaker(name = "payment")
+@Retry(name = "payment")
+public PaymentResponse processPayment(ChargeRequest request) { ... }
+```
+
+#### Retryable vs Ignored Exceptions
+
+- **Retry on**: `ConnectException`, `SocketTimeoutException`, `ResourceAccessException`, HTTP 503
+- **Never retry on**: `BadRequestException`, `ResourceNotFoundException`, HTTP 400/404/409/422
+- Configure `record-exceptions` and `ignore-exceptions` explicitly per circuit breaker instance
+
+#### Feign Client Resilience
+
+Feign client names auto-map to Resilience4j instance names:
+
+```yaml
+resilience4j:
+  circuitbreaker:
+    instances:
+      payment-service:   # matches @FeignClient(name = "payment-service")
+        sliding-window-size: 50
+        failure-rate-threshold: 50
+```
+
+#### Typed Configuration Records
+
+Use `@ConfigurationProperties` records for per-downstream resilience config — never hardcode thresholds:
+
+```java
+@ConfigurationProperties(prefix = "resilience.payment")
+public record PaymentResilienceConfig(
+    int retryMaxAttempts,
+    Duration retryBackoff,
+    int circuitBreakerFailureThreshold,
+    Duration circuitBreakerOpenDuration,
+    int circuitBreakerHalfOpenCalls,
+    Duration timeout,
+    int bulkheadMaxConcurrent,
+    Duration bulkheadMaxWait
+) {}
+```
+
+#### Resilience Audit
+
+Systematically audit every downstream call: circuit breaker, retry, timeout, bulkhead. Priority: critical path (all 4 mandatory) > semi-critical (CB + timeout minimum) > non-critical (timeout + bulkhead so they don't block critical paths).
+
 ### Spring Batch
 
 For enterprise batch processing (ETL, reconciliation, bulk operations). Detect: `spring-boot-starter-batch` dependency.
@@ -1274,11 +1327,61 @@ If neither is configured, default to Flyway with sequential versioning and advis
 - Include indexes for foreign keys and frequently queried columns
 - `TIMESTAMP WITH TIME ZONE` for audit fields (not `TIMESTAMP WITHOUT TIME ZONE`)
 
+### Schema Naming Conventions
+- Tables: plural, snake_case — `orders`, `order_items`, `payment_transactions`
+- Columns: singular, snake_case — `customer_id`, `created_at`, `is_active`
+- PKs: `id` (UUID) — never composite unless a join table
+- FKs: `{referenced_table_singular}_id` — `customer_id` references `customers(id)`
+- Indexes: `idx_{table}_{column(s)}` — `idx_orders_status`, `idx_orders_customer_id_status`
+- Unique constraints: `uq_{table}_{column(s)}` — `uq_orders_order_number`
+- Check constraints: `ck_{table}_{rule}` — `ck_orders_total_positive`
+- Entity audit fields: `created_at`, `updated_at`, `version` on every mutating table
+- Monetary columns: `NUMERIC(19,4)` — never `DOUBLE` or `FLOAT`
+- Use `JSONB` for semi-structured data, not `JSON`
+- Use `TEXT` over `VARCHAR` for unbounded strings
+
+### Indexing Strategy
+- Index every FK column, every column in WHERE clauses, and every column in ORDER BY
+- Composite indexes for columns frequently queried together
+- Partial indexes for queries on small subsets: `CREATE INDEX ... WHERE status = 'PENDING'`
+- Covering indexes (INCLUDE) to avoid heap fetches for common column sets
+- Do NOT index low-cardinality columns (< 5 values) unless using partial indexes
+- B-tree is the default; GIN for JSONB/array containment; GiST for geometric; BRIN for very large append-only tables
+
+### No-Downtime Migration Safety
+| Operation | Safety | Mitigation |
+|-----------|--------|------------|
+| `CREATE INDEX` | Requires CONCURRENTLY | `CREATE INDEX CONCURRENTLY` (outside transaction) |
+| `ADD COLUMN NOT NULL DEFAULT` | Dangerous — rewrites table | Add nullable → backfill → set NOT NULL in next release |
+| `ALTER COLUMN TYPE` | Dangerous — exclusive lock | Create new column → dual-write → backfill → switch reads → drop old |
+| `DROP COLUMN` | Safe if unused | Deploy code that stops reading it first, then drop |
+| `ADD FOREIGN KEY` | Dangerous | Create NOT VALID → validate in separate transaction |
+| `DROP TABLE` | Dangerous | Remove code references first, then drop in next release |
+
+### Query Anti-Patterns
+- **N+1 queries**: Use `JOIN FETCH` or `@EntityGraph` for eager-loaded relationships
+- **OFFSET pagination on large tables**: Use keyset/seek pagination instead
+- **Function on indexed column**: `WHERE LOWER(col) = ?` defeats index; use expression index
+- **Missing query timeout**: Set `jakarta.persistence.query.timeout: 5000`
+
+### Connection Pool Tuning (HikariCP)
+- Formula: `maximum-pool-size = (CPU cores * 2) + disk count`
+- Typical: 10 connections per service instance
+- Set `leak-detection-threshold: 60000` (1 minute) to catch connection leaks
+- Watch `hikaricp_connections_pending` — if > 0 at steady state, increase pool
+
 ---
 
 ## Observability
 
 Production applications need structured observability. Apply these patterns.
+
+### Prometheus / OTel Metrics Setup
+- Add `micrometer-registry-prometheus` and expose `/actuator/prometheus`
+- Configure `management.metrics.distribution.percentiles-histogram` for HTTP and business timers
+- Standard metrics every service must emit: `{domain}.created.total`, `{domain}.operation.errors`, `{domain}.operation.duration`, `downstream.{name}.health`
+- For OpenTelemetry: `micrometer-registry-otlp` + `micrometer-tracing-bridge-otel`
+- Metrics naming convention: `{domain}.{operation}.{unit}` — e.g., `orders.created.total`, `payments.process.duration`
 
 ### Structured Logging
 - Use `log.info("{}", object)` — never string concatenation or `log.info(object.toString())`
@@ -1286,6 +1389,7 @@ Production applications need structured observability. Apply these patterns.
 - Log at boundaries: incoming request (controller), outgoing calls (REST clients, message producer), error paths
 - Do NOT log request bodies or headers without sanitization
 - Use `@Slf4j` (Lombok) or `LoggerFactory.getLogger(Xxx.class)` consistently
+- JSON logging for log aggregation: `logstash-logback-encoder` with `traceId`/`spanId` in MDC
 
 ### Metrics (Micrometer)
 - `@Timed` on every endpoint and every service method that calls an external system
@@ -1295,13 +1399,167 @@ Production applications need structured observability. Apply these patterns.
 
 ### Health Checks
 - Every service needs a health indicator if it depends on external systems
-- Custom `HealthIndicator` for critical downstream dependencies
-- Liveness vs readiness: `/actuator/health/liveness` and `/actuator/health/readiness` in Kubernetes deployments
+- Custom `HealthIndicator` for DB, message broker, and downstream APIs
+- Liveness vs readiness: `/actuator/health/liveness` (JVM alive only) and `/actuator/health/readiness` (all dependencies checked)
+- Readiness group should include DB, broker, and critical downstream checks
 
 ### Tracing
 - Propagation headers: `X-B3-TraceId`, `X-B3-SpanId` (Zipkin) or `traceparent` (W3C)
 - Include tracing in `RestTemplate` / `WebClient` builder, Kafka producer/consumer, and JDBC driver
 - Inject `Tracer` / `Observation` API for custom spans around significant operations
+- Spring Boot 3.x: `micrometer-tracing-bridge-brave`; Spring Boot 2.x: `spring-cloud-starter-sleuth`
+
+### SLI / SLO Definitions
+- Define per-endpoint SLIs: availability (% successful requests), latency (p95, p99), error budget
+- Error budget calculation: 99.9% availability = 43.2 min downtime/month
+- Burn rate alerts: fast burn (14.4x = 1h alert) for critical, slow burn (3x = 6h alert) for warning
+- Store SLI/SLO config in version-controlled `.sli/{service}.yaml` files
+
+### Grafana Dashboards
+Standard dashboard rows per service: Service Health (up/down, request rate, error rate), Latency (p50/p90/p99, slow endpoints table), Throughput & Saturation (active requests, JVM memory, GC pauses), Dependencies (DB pool, downstream latency, Kafka lag), Business Metrics (domain counters and gauges).
+
+### Alerting Rules
+- Service down > 1min → critical
+- Error rate > 1% for 5min → critical
+- p99 latency > SLO threshold for 5min → warning
+- DB connection pool pending > 10 for 2min → warning
+- Kafka consumer lag > 10k records for 10min → warning
+- Circuit breaker open > 60s → critical
+- Every alert must have a runbook link in annotations
+
+---
+
+## Contract-First API Design
+
+Design the API contract before writing implementation code. The spec is the source of truth.
+
+### OpenAPI 3.1 (REST)
+- Spec location: `src/main/resources/openapi/{service}-api.yaml`
+- All IDs: `string format: uuid`; all monetary values: `string` with `^\d+\.\d{2}$` pattern; all timestamps: `string format: date-time`
+- Enums: upper snake_case, explicitly listed
+- Pagination: `page` (0-based, default 0), `size` (default 20, max 100), `sort` (field,direction)
+- All mutating endpoints accept `Idempotency-Key` header (UUID)
+- Error responses: RFC 7807 Problem Details (`application/problem+json`) per status code
+- Versioning: URL path prefix `/api/v1/`, `/api/v2/`; version on breaking changes only
+- Use `openapi-generator-maven-plugin` with `interfaceOnly: true` to generate controller interfaces
+- Controller implements generated interface — spec is always the source of truth
+
+### AsyncAPI 3.0 (Events)
+- Spec location: `src/main/resources/asyncapi/{service}-events.yaml`
+- Every event MUST have: `eventId` (UUID), `eventType` (constant), `eventVersion` (semver), `occurredAt`
+- Channel naming: `{domain}.{action}` — `orders.created`, `payments.charged`
+- Event types: past-tense nouns — `OrderCreated`, `PaymentCharged`, `ShipmentDelivered`
+
+### gRPC
+- Proto files: `src/main/proto/{service}.proto`
+- Monetary values in minor units as `int64`; timestamps as `int64` (epoch millis) or `google.protobuf.Timestamp`
+- Enum zero value is always `UNSPECIFIED`; package: `{domain}.v{version}`
+- Include `idempotency_key` on all mutating RPCs
+
+### GraphQL
+- Schema-first: `.graphqls` files in `src/main/resources/graphql/` — never generate schema from code
+- Mutations return payloads with `UserError` — never throw for business errors
+- Monetary wrapper type (`Money`) with string amount; `ID` type for all identifiers
+- `idempotencyKey` on all mutating inputs
+
+### Security Design (Contract-Level)
+- Scopes follow `{action}:{resource}` convention — `read:orders`, `write:orders`, `admin:orders`
+- Rate limits defined per endpoint group in `x-rate-limit` extensions
+- Every endpoint must have security requirements documented in the spec
+
+---
+
+## Performance Testing
+
+Performance test before production to establish throughput limits, latency profiles, and breaking points.
+
+### Load Testing (k6 Recommended)
+- Script location: `src/test/k6/{service}-load-test.js`
+- Test critical user journeys as multi-step scenarios, not individual endpoints
+- Use realistic payloads with unique `Idempotency-Key` per request
+- Configure thresholds: `http_req_duration: ['p(95)<500', 'p(99)<1000']`, `http_req_failed: ['rate<0.01']`
+- Test types: smoke (1 VU, 30s), load (target VUs, 2m steady), stress (ramp to breaking), soak (moderate load, 30m+)
+- Run in CI: `k6 run` with JSON output archived as build artifact
+
+### JVM Profiling
+- **JFR** (Java Flight Recorder): `< 2% overhead, production-safe. Enable with `-XX:StartFlightRecording`
+- **Async Profiler** (Linux): CPU, allocation, lock, and wall-clock profiles; generate flame graphs
+- Profile during load test, not in isolation — real bottlenecks only appear under load
+- Hot methods: wide bars at top of flame graph; deep call chains: tall narrow stacks; red frames: syscalls/IO
+
+### Database Profiling
+- Enable `pg_stat_statements` (PostgreSQL) to find slow queries under load
+- Watch `shared_blks_read` — high values = disk I/O = missing indexes
+- Monitor HikariCP during test: `hikaricp_connections_pending > 0` = pool saturated
+
+### Capacity Planning
+- Safe capacity = breaking_point_RPS * 0.6
+- Instances needed = target_RPS / safe_capacity_per_instance
+- Test at incremental VU levels (10, 25, 50, 100, 150, 200) to find the inflection point
+- CPU headroom > 20% at peak load; GC pause p99 < 100ms; DB pool not saturated
+
+---
+
+## Release Management
+
+Automate versioning, changelogs, and releases. Manual releases are error-prone.
+
+### Version Bumping
+- **Conventional Commits**: `feat:` → MINOR, `fix:` → PATCH, `feat!:` / `BREAKING CHANGE:` → MAJOR
+- Parse commits since last tag to determine bump type automatically
+- Use `mvn versions:set` (Maven) or update `gradle.properties` (Gradle)
+- Multi-module: bump all modules together
+
+### Changelog Format
+- Follow Keep a Changelog: `Added`, `Changed`, `Fixed`, `Security`, `Deprecated`, `Removed`
+- Each entry links to the PR: `- Description [#NNN](https://github.com/.../pull/NNN)`
+- Generate from git log since last tag, grouped by conventional commit type
+
+### Release Artifacts
+- Annotated git tag: `git tag -a v1.3.0 -m "release message"`
+- GitHub Release: create via `gh release create` or CI automation with changelog as body
+- Release notes: internal version (deployer, CI run, migrations, config changes, rollback plan, monitoring) vs external version (new features, bug fixes, API changes)
+
+### CI Automation
+- Trigger on tag push: `on: push: tags: ['v*']`
+- Build → generate changelog → create GitHub Release → upload artifacts → notify Slack/Teams
+- Semantic release (no manual bumping): `@semantic-release` with plugins for commit analysis, changelog, Maven exec, and GitHub release
+
+---
+
+## Dependency Management
+
+Keep dependencies secure, up-to-date, and conflict-free.
+
+### Vulnerability Scanning
+- **OWASP dependency-check**: Maven/Gradle plugin; `failBuildOnCVSS: 7` (fail on HIGH and CRITICAL)
+- Register for NVD API key to avoid rate limiting
+- False positive suppressions must include: why it doesn't apply to your usage + review date + reviewer
+- Run in CI on every PR and on a weekly schedule
+
+### Version Management
+- **Gradle**: Use version catalog (`gradle/libs.versions.toml`) — single source of truth for all versions
+- **Maven multi-module**: Use `<dependencyManagement>` in parent POM
+- **Maven multi-service**: Create a shared BOM (`acme-dependencies`) consumed by all services
+- Use `maven-enforcer-plugin` with `dependencyConvergence`, `requireUpperBoundDeps`, `banDuplicatePomDependencyVersions`
+
+### Automated Updates
+- **Renovate**: patch updates auto-merge; minor auto-PR; major requires dashboard approval
+- **Dependabot**: weekly schedule; group Spring deps, test deps; limit 10 open PRs
+- Vulnerability alerts: label `security`, auto-PR immediately
+
+### Transitive Conflict Resolution
+- Maven: `<dependencyManagement>` overrides all transitive versions
+- Gradle: `resolutionStrategy.force()` or version catalog constraints
+- Always prefer the Spring Boot managed version unless explicitly needed otherwise
+- Run `mvn dependency:tree -Dverbose` to find conflicts; `mvn dependency:analyze` to find unused/direct deps
+
+### Spring Boot Upgrade Checklist
+- Check release notes for breaking changes and deprecated APIs
+- Update parent version; check Spring Cloud compatibility matrix
+- Verify javax→jakarta implications for cross-version upgrades
+- Run `mvn clean verify`; check config property changes with `spring-boot-properties-migrator`
+- Review security config — DSL may have changed between versions
 
 ---
 

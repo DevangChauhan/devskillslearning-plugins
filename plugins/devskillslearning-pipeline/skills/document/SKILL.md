@@ -411,3 +411,6 @@ curl http://localhost:8080/api/v1/health
 - [ ] ADRs: sufficient context for someone 6 months from now
 - [ ] README: quick start works from a clean checkout
 - [ ] No stale paths, dead links, or outdated versions
+
+## Next Step
+Documentation is complete. If the API has changed, use `/devskillslearning-pipeline:release` to cut a release with the updated changelog.
