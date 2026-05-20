@@ -275,6 +275,17 @@ management:
       show-details: when-authorized
       probes:
         enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 
 logging:
   level:
@@ -467,6 +478,40 @@ Add corresponding defaults in `application.yml`:
     base-url: https://api.example.com
     connect-timeout: 5s
     read-timeout: 30s
+```
+
+**DatabaseHealthIndicator**:
+
+```java
+package com.<company>.<artifact>.health;
+
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.stereotype.Component;
+import javax.sql.DataSource;
+
+@Component
+public class DatabaseHealthIndicator implements HealthIndicator {
+    private final DataSource dataSource;
+
+    public DatabaseHealthIndicator(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Override
+    public Health health() {
+        try (var conn = dataSource.getConnection();
+             var stmt = conn.createStatement();
+             var rs = stmt.executeQuery("SELECT 1")) {
+            rs.next();
+            return Health.up()
+                .withDetail("database", conn.getMetaData().getDatabaseProductName())
+                .build();
+        } catch (Exception e) {
+            return Health.down().withException(e).build();
+        }
+    }
+}
 ```
 
 ### 2f. Architecture test (ArchUnit)

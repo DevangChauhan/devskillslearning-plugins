@@ -32,7 +32,9 @@ plugins/devskillslearning-pipeline/
     release/SKILL.md                    # Semantic versioning, changelogs, release notes, CI automation
     dependency/SKILL.md                 # OWASP scanning, version catalogs, BOMs, Renovate/Dependabot
   README.md                             # Usage guide with quick start and examples
-  docs/CONVENTIONS.md                   # Best practices: full enterprise stack (1,400+ lines)
+  docs/CONVENTIONS.md                   # Best practices: full enterprise stack (1,700+ lines)
+  docs/api-examples.md                  # Full OpenAPI, AsyncAPI, gRPC, GraphQL spec examples
+  docs/SKILL-DEVELOPMENT.md             # Contributor guide: how to add/modify skills
 install.sh                              # Idempotent install: registers marketplace + installs plugin
 ```
 
