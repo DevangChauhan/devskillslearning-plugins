@@ -734,3 +734,254 @@ input PageInput {
     sort: String = "createdAt,desc"
 }
 ```
+
+---
+
+## API Integration — Stripe Payment Client
+
+Full example of consuming an external REST API with generated client, RestClient config, error mapping, and resilience.
+
+### OpenAPI Client Generation (Maven)
+
+```xml
+<plugin>
+    <groupId>org.openapitools</groupId>
+    <artifactId>openapi-generator-maven-plugin</artifactId>
+    <version>7.8.0</version>
+    <executions>
+        <execution>
+            <id>stripe-client</id>
+            <goals><goal>generate</goal></goals>
+            <configuration>
+                <inputSpec>${project.basedir}/src/main/resources/openapi/stripe-api.yaml</inputSpec>
+                <generatorName>java</generatorName>
+                <library>restclient</library>
+                <apiPackage>com.acme.orderservice.client.stripe</apiPackage>
+                <modelPackage>com.acme.orderservice.client.stripe.dto</modelPackage>
+                <configOptions>
+                    <useJakartaEe>true</useJakartaEe>
+                    <openApiNullable>false</openApiNullable>
+                </configOptions>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### Configuration Record
+
+```java
+@Validated
+@ConfigurationProperties(prefix = "integration.stripe")
+public record StripeClientConfig(
+    @NotBlank String baseUrl,
+    @NotBlank String apiKey,
+    String webhookSecret,
+    Duration connectTimeout,
+    Duration readTimeout
+) {
+    public StripeClientConfig {
+        if (connectTimeout == null) connectTimeout = Duration.ofSeconds(5);
+        if (readTimeout == null) readTimeout = Duration.ofSeconds(30);
+    }
+}
+```
+
+### RestClient Bean
+
+```java
+@Configuration
+@RequiredArgsConstructor
+public class StripeClientConfig {
+
+    @Bean
+    @ConfigurationProperties(prefix = "integration.stripe")
+    public StripeClientConfig stripeConfig() {
+        return new StripeClientConfig(null, null, null, null, null);
+    }
+
+    @Bean
+    public RestClient stripeRestClient(RestClient.Builder builder, StripeClientConfig config) {
+        return builder
+            .baseUrl(config.baseUrl())
+            .defaultHeader("Authorization", "Bearer " + config.apiKey())
+            .defaultHeader("User-Agent", "order-service/1.0")
+            .requestInterceptor((request, body, execution) -> {
+                request.getHeaders().add("Idempotency-Key", UUID.randomUUID().toString());
+                return execution.execute(request, body);
+            })
+            .requestFactory(factory(config))
+            .build();
+    }
+
+    private ClientHttpRequestFactory factory(StripeClientConfig config) {
+        var f = new HttpComponentsClientHttpRequestFactory();
+        f.setConnectTimeout(config.connectTimeout());
+        f.setReadTimeout(config.readTimeout());
+        return f;
+    }
+}
+```
+
+### Client with Error Mapping + Resilience
+
+```java
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class StripePaymentClient {
+    private final RestClient restClient;
+
+    @CircuitBreaker(name = "stripe", fallbackMethod = "fallbackCharge")
+    @Retry(name = "stripe")
+    public ChargeResponse createCharge(ChargeRequest request) {
+        log.info("Creating Stripe charge: amount={} currency={}", request.amount(), request.currency());
+        return restClient
+            .post()
+            .uri("/v1/charges")
+            .body(request)
+            .retrieve()
+            .onStatus(s -> s.value() == 401, (req, res) -> {
+                throw new DownstreamAuthException("Invalid Stripe API key");
+            })
+            .onStatus(s -> s.value() == 429, (req, res) -> {
+                throw new RateLimitException("Stripe API rate limited");
+            })
+            .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+                var error = parseStripeError(res);
+                throw new DownstreamClientException("Stripe error: " + error.type(), error);
+            })
+            .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+                log.error("Stripe API server error");
+                throw new DownstreamServerException("Stripe unavailable");
+            })
+            .body(ChargeResponse.class);
+    }
+
+    private ChargeResponse fallbackCharge(ChargeRequest request, Exception ex) {
+        log.warn("Stripe circuit open — queuing charge for retry", ex);
+        return ChargeResponse.pending(request.idempotencyKey(), "Payment queued");
+    }
+}
+```
+
+### application.yml
+
+```yaml
+integration:
+  stripe:
+    base-url: ${STRIPE_API_URL:https://api.stripe.com}
+    api-key: ${STRIPE_API_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    connect-timeout: 5s
+    read-timeout: 30s
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      stripe:
+        sliding-window-size: 50
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+  retry:
+    instances:
+      stripe:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2
+```
+
+### Webhook Receiver
+
+```java
+@RestController
+@RequestMapping("/webhooks")
+@RequiredArgsConstructor
+@Slf4j
+public class StripeWebhookController {
+    private final StripeClientConfig config;
+    private final PaymentWebhookService service;
+
+    @PostMapping("/stripe")
+    public ResponseEntity<Void> handleStripeWebhook(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String signature) {
+
+        if (!verifySignature(payload, signature, config.webhookSecret())) {
+            log.warn("Invalid Stripe webhook signature");
+            return ResponseEntity.status(403).build();
+        }
+        var event = parseEvent(payload);
+        if (service.isEventProcessed(event.id())) {
+            return ResponseEntity.ok().build();
+        }
+        service.processAsync(event);
+        return ResponseEntity.accepted().build();
+    }
+
+    private boolean verifySignature(String payload, String sigHeader, String secret) {
+        // HMAC-SHA256 verification
+        var mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        var computed = HexFormat.of().formatHex(mac.doFinal(payload.getBytes()));
+        return MessageDigest.isEqual(computed.getBytes(), sigHeader.getBytes());
+    }
+}
+```
+
+### Integration Test (WireMock)
+
+```java
+@SpringBootTest(webEnvironment = RANDOM_PORT)
+@WireMockTest(httpPort = 9099)
+class StripePaymentClientTest {
+    @Autowired private StripePaymentClient client;
+
+    @Test
+    void shouldCreateChargeSuccessfully() {
+        stubFor(post(urlEqualTo("/v1/charges"))
+            .withHeader("Authorization", equalTo("Bearer sk_test_123"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("""
+                    {"id":"ch_123","status":"succeeded","amount":2999,"currency":"usd"}
+                    """)));
+
+        var response = client.createCharge(
+            new ChargeRequest(2999, "usd", "tok_visa", "order-456"));
+        assertThat(response.id()).isEqualTo("ch_123");
+        assertThat(response.status()).isEqualTo("succeeded");
+    }
+
+    @Test
+    void shouldMapStripeErrorToDomainException() {
+        stubFor(post(urlEqualTo("/v1/charges"))
+            .willReturn(aResponse()
+                .withStatus(402)
+                .withBody("""
+                    {"error":{"type":"card_declined","message":"Card was declined","code":"card_declined"}}
+                    """)));
+
+        assertThatThrownBy(() -> client.createCharge(
+            new ChargeRequest(2999, "usd", "tok_declined", "order-456")))
+            .isInstanceOf(CardDeclinedException.class)
+            .hasMessageContaining("Card was declined");
+    }
+
+    @Test
+    void shouldRetryOnServerError() {
+        stubFor(post(urlEqualTo("/v1/charges"))
+            .inScenario("retry")
+            .willReturn(aResponse().withStatus(503))
+            .willSetStateTo("first-failed"));
+        stubFor(post(urlEqualTo("/v1/charges"))
+            .inScenario("retry")
+            .whenScenarioStateIs("first-failed")
+            .willReturn(aResponse().withStatus(200).withBody("...")));
+
+        var response = client.createCharge(...);
+        assertThat(response.id()).isNotNull();
+    }
+}
+```

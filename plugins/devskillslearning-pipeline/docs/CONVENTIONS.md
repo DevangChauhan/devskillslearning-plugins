@@ -1687,6 +1687,8 @@ The `github` skill and PR review features integrate with GitHub via MCP tools fo
 
 All GitHub operations use the `mcp__plugin_github_github__*` family of tools. The skill auto-detects whether these are available and falls back gracefully if not.
 
+**One-time setup**: Create a GitHub Personal Access Token with `repo`, `read:org`, `workflow` scopes. Configure in `~/.claude/settings.json` under `mcpServers.github`.
+
 ### Issue/Project Management
 
 **Epics**: Tracked as GitHub issues with `epic` label. Contain a description, story checklist, success criteria, and dependencies.
@@ -1709,6 +1711,10 @@ All GitHub operations use the `mcp__plugin_github_github__*` family of tools. Th
 | `severity:high` / `severity:medium` / `severity:low` | Bug severity |
 | `tech-debt` | Technical debt and refactoring items |
 | `documentation` | Documentation tasks |
+| `dependencies` | Automated dependency PRs (Renovate/Dependabot) |
+| `security` | Vulnerability fixes and security patches |
+| `major-upgrade` | Major version upgrades requiring review |
+| `needs-review` | PRs awaiting human review |
 
 ### PR Review Workflow
 
@@ -1722,6 +1728,8 @@ Review submission follows the three-step pending review workflow:
 2. Add inline comments on specific lines (add_comment_to_pending_review)
 3. Submit the review (method=submit_pending, event=APPROVE/REQUEST_CHANGES/COMMENT)
 
+Also request Copilot review via `request_copilot_review` as an automated first pass before human review.
+
 ### Ticket-to-Code Workflow
 
 When a user asks to "implement ticket #N":
@@ -1733,6 +1741,29 @@ When a user asks to "implement ticket #N":
 5. Implement following write-code conventions
 6. Create PR linked via `Closes #N` or `Refs #N`
 7. Update the issue with PR link
+
+### GitHub Releases
+
+Use `/devskillslearning-pipeline:release` to automate release creation:
+- Create annotated git tag from version
+- Generate changelog from conventional commits
+- Create GitHub Release via `gh release create` or CI automation
+- Attach build artifacts (JAR, Docker image reference)
+- Notify Slack/Teams via webhook
+
+### Dependabot / Renovate Integration
+
+Use `/devskillslearning-pipeline:dependency` to configure:
+- **Dependabot**: `.github/dependabot.yml` — group Spring deps, test deps; limit open PRs
+- **Renovate**: `.github/renovate.json` — patch auto-merge, minor auto-PR, major approval required
+- Both label PRs with `dependencies` and `security` (for vulnerability alerts)
+
+### Webhook Receivers
+
+Use `/devskillslearning-pipeline:api-integrate` for receiving GitHub webhooks in your service:
+- Verify HMAC signature before processing
+- Check idempotency (GitHub may send same event twice)
+- Return 202 quickly, process asynchronously
 
 ### Commands Quick Reference
 
@@ -1752,4 +1783,13 @@ gh pr create --repo owner/repo --title "Add feature X" --body "Closes #15" --bas
 # Review PR
 gh pr review 128 --repo owner/repo --approve
 gh pr review 128 --repo owner/repo --request-changes --body "Issues found..."
+
+# Create release
+gh release create v1.3.0 --title "v1.3.0" --notes-file changelog.md --target main
+
+# List releases
+gh release list --repo owner/repo
+
+# Check Dependabot alerts
+gh api /repos/owner/repo/dependabot/alerts --jq '.[] | select(.security_advisory.severity=="critical") | .security_advisory.summary'
 ```
