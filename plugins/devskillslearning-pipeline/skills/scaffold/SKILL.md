@@ -568,6 +568,8 @@ Generate a minimal `CLAUDE.md` in the project root documenting the decisions mad
 - Package-by-layer: controller → service.impl → repository → entity → dto → mapper → config → exception
 - Constructor injection only, records for DTOs, BigDecimal for money, @Getter/@Setter on entities
 - Run `/devskillslearning-pipeline:code-review` before PRs for convention checks
+- Use `/devskillslearning-pipeline:design-api` to design API contracts before implementing
+- Use `/devskillslearning-pipeline:database` to design the schema and create safe migrations
 ```
 
 ### 2i. .gitignore

@@ -45,6 +45,8 @@ You generate high-quality technical documentation for Java/Spring Boot projects.
 
 ## Step 2: Generate Documentation
 
+**For greenfield APIs**: Use `/devskillslearning-pipeline:design-api` first to design the contract before implementation. This skill generates docs from existing code — design-api creates the contract that drives implementation.
+
 ### 2a. OpenAPI 3.0 Spec
 
 Scan controllers and generate an OpenAPI 3.0 YAML:

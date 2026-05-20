@@ -246,6 +246,8 @@ http.addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.clas
 
 ### 2e. Rate Limiting (Bucket4j in Filter)
 
+**For comprehensive resilience patterns (circuit breaker, retry with backoff, bulkhead, rate limiter as annotations), use `/devskillslearning-pipeline:resilience`** — the resilience skill covers all Resilience4j patterns with typed configuration records. This section covers the Bucket4j filter approach for API-gateway-style rate limiting.
+
 ```java
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {

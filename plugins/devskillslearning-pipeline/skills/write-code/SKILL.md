@@ -528,6 +528,8 @@ Rules:
 
 ### 2k. Observability Instrumentation
 
+Every new class should include basic instrumentation. **For comprehensive observability (Prometheus, Grafana, distributed tracing, alerting, SLI/SLO definitions), use `/devskillslearning-pipeline:monitor`** — the monitor skill handles the full production observability stack. This section covers the minimum instrumentation every class needs.
+
 Every new class should include:
 
 - **`@Slf4j`** on all classes (or `LoggerFactory.getLogger(Xxx.class)` if Lombok not in use)

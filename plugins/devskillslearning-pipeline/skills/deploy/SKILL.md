@@ -47,6 +47,11 @@ Based on what the user asked for:
 | "Helm" | Helm chart with values.yaml for dev/staging/prod |
 | "Full deploy setup" | All of the above |
 
+**Related skills in the ship/operate workflow:**
+- Use `/devskillslearning-pipeline:monitor` after deploy to set up Prometheus, Grafana, and alerting
+- Use `/devskillslearning-pipeline:release` to cut a versioned release with changelog
+- Use `/devskillslearning-pipeline:perf-test` before deploy to verify performance under load
+
 ## Step 2: Generate Artifacts
 
 ### 2a. Dockerfile (Multi-Stage, Distroless)

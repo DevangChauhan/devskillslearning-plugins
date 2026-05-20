@@ -102,10 +102,14 @@ mvn dependency:tree -pl :module-name | grep spring-boot-starter-parent
 | Symptom | Root Cause | Fix |
 |----------|-----------|-----|
 | Slow endpoint | N+1 queries | Add `@EntityGraph` or JOIN FETCH, check for lazy-loading in loops |
+| Slow endpoint (intermittent) | Missing DB index, connection pool saturation | Check `pg_stat_statements`, check `hikaricp_connections_pending`. Use `/devskillslearning-pipeline:database` for systematic query/index review |
 | `OutOfMemoryError: Java heap space` | Memory leak or large dataset loaded into memory | Use pagination/streaming, increase `-Xmx`, check for unbounded collections |
 | `ConnectionPoolTimeoutException` | Connection pool exhausted | Increase `hikari.maximum-pool-size`, check for connection leaks |
-| `SocketTimeoutException` on external call | Downstream service slow or unresponsive | Add/adjust timeout, add circuit breaker |
+| `SocketTimeoutException` on external call | Downstream service slow or unresponsive | Add/adjust timeout, add circuit breaker. Use `/devskillslearning-pipeline:resilience` for comprehensive patterns |
 | Event published but consumer not receiving | Wrong topic, consumer group, or deserialization error | Check topic name, consumer group, event schema compatibility |
+| Circuit breaker open / fallback triggered | Downstream failing at high rate | Check downstream health, verify thresholds in resilience config. Use `/devskillslearning-pipeline:resilience` to review and tune |
+| High p99 latency under load | Bottleneck in hot code path, GC pauses, DB contention | Profile with JFR/Async Profiler. Use `/devskillslearning-pipeline:perf-test` for systematic profiling |
+| Missing metrics / no alert on failure | Observability not configured | Use `/devskillslearning-pipeline:monitor` to set up Prometheus, Grafana, and alerting rules |
 
 ## Step 2: Trace Root Cause
 

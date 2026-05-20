@@ -27,6 +27,55 @@ Complete AI-first Java/Spring Boot SDLC automation with GitHub project managemen
 
 ---
 
+## Workflow: How Skills Chain Together
+
+```
+                         PLAN & DESIGN
+                    ┌──────────────────────┐
+                    │  design-api          │──► OpenAPI / AsyncAPI / gRPC / GraphQL specs
+                    │  database            │──► Schema, indexes, migrations
+                    │  github              │──► Epics, stories, tickets
+                    └────────┬─────────────┘
+                             │ contracts/models feed into ↓
+                             │
+                         BUILD & IMPLEMENT
+                    ┌──────────────────────┐
+                    │  scaffold            │──► Bootstrap new project
+                    │  write-code          │──► Implement features
+                    │  write-tests         │──► Unit, web, integration tests
+                    │  refactor            │──► Safe restructuring
+                    │  migrate             │──► Spring Boot / Java upgrades
+                    │  document            │──► OpenAPI, C4, ADRs, READMEs
+                    └────────┬─────────────┘
+                             │
+                             ↓
+                         VERIFY & HARDEN
+                    ┌──────────────────────┐
+                    │  code-review   │──► 100+ architecture/security checks    │
+                    │  diagnose      │──► Root cause analysis & fix           │
+                    │  secure        │──► OAuth2, JWT, Keycloak, CORS         │
+                    │  resilience    │──► Circuit breaker, retry, bulkhead     │
+                    │  dependency    │──► OWASP scan, version catalogs, BOMs  │
+                    └────────┬─────────────────────┘
+                             │
+                             ↓
+                         SHIP & OPERATE
+                    ┌──────────────────────┐
+                    │  perf-test     │──► k6/Gatling, JFR profiling, capacity  │
+                    │  deploy        │──► K8s, Docker, CI/CD, Helm             │
+                    │  monitor       │──► Metrics, tracing, alerting, dashboards│
+                    │  release       │──► Versioning, changelogs, release notes│
+                    └──────────────────────┘
+```
+
+**Typical greenfield flow**: `scaffold` → `design-api` → `database` → `write-code` → `write-tests` → `code-review` → `resilience` → `secure` → `perf-test` → `deploy` → `monitor` → `release`
+
+**Feature addition flow**: `github` (read ticket) → `write-code` → `write-tests` → `code-review`
+
+**Production hardening flow**: `dependency` (scan) → `resilience` → `secure` → `perf-test` → `monitor` → `deploy`
+
+---
+
 ## Quick Start: Choose Your Entry Point
 
 ### I'm starting a new project

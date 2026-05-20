@@ -298,6 +298,7 @@ The most common performance bug in JPA code:
 - [ ] Migration includes rollback (Flyway: comment; Liquibase: rollback block)
 - [ ] Migration uses `IF NOT EXISTS` for idempotency
 - [ ] Consistent migration tool usage — no mixing Flyway and Liquibase migrations in the same module
+- [ ] For comprehensive schema design, indexing strategy, and no-downtime migration safety review, use `/devskillslearning-pipeline:database`
 
 ### DTOs
 - [ ] Java records used (immutable) — classes only if mutability required
@@ -423,6 +424,7 @@ The most common performance bug in JPA code:
 - [ ] Bulkhead limits concurrent calls to prevent cascading failure
 - [ ] `server.shutdown: graceful` + `spring.lifecycle.timeout-per-shutdown-phase` configured
 - [ ] Rate limiter at service level for expensive operations (not just API gateway)
+- [ ] Use `/devskillslearning-pipeline:resilience` for comprehensive Resilience4j setup with typed config records
 
 ### Spring Batch (MEDIUM)
 - [ ] Chunk size configured (not default Integer.MAX_VALUE)
@@ -485,6 +487,8 @@ The most common performance bug in JPA code:
 - [ ] Health indicator for critical downstream dependencies
 - [ ] Correlation / trace ID propagation through the call chain
 - [ ] `log.error()` includes the exception as second argument, not just `ex.getMessage()`
+- [ ] For full observability review (Prometheus, Grafana, alerting, SLIs), use `/devskillslearning-pipeline:monitor`
+- [ ] For performance bottleneck identification under load, use `/devskillslearning-pipeline:perf-test`
 
 ## Test Review
 
