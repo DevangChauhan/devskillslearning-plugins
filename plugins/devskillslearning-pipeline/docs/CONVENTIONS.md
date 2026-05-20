@@ -1563,6 +1563,50 @@ Keep dependencies secure, up-to-date, and conflict-free.
 
 ---
 
+## API Integration
+
+Consuming external APIs requires client generation, configuration, error mapping, and resilience.
+
+### Client Generation
+- Use `openapi-generator-maven-plugin` with `library: restclient` to generate typed clients from OpenAPI specs
+- Generated clients go in `*.client.{service}` package; generated DTOs in `*.client.{service}.dto`
+- Never hand-write HTTP calls when an OpenAPI/Grpc spec is available — use generated clients
+- For gRPC: use `protobuf-maven-plugin` to generate stubs, configure `ManagedChannel` with deadline
+
+### HTTP Client Setup
+- **Spring Boot 3.x**: Prefer `RestClient` (sync) or `WebClient` (reactive)
+- **Spring Boot 2.x**: `RestTemplate` with `RestTemplateBuilder`
+- Configure per-service: base URL, auth headers, connect timeout (3-5s), read timeout (5-30s)
+- Inject `X-Trace-Id` header via `ClientHttpRequestInterceptor` for distributed tracing
+- Set `User-Agent` header identifying your service and version
+- Use `@ConfigurationProperties` records for external API config under `integration.{name}`
+
+### Error Mapping
+- Map downstream errors to domain exceptions — never expose raw downstream error bodies to your callers
+- Use `onStatus()` (RestClient) / `onStatus()` (WebClient) / `ErrorDecoder` (Feign)
+- 4xx → domain exception (e.g., `CardDeclinedException`); 5xx → `ServiceUnavailableException`; 429 → `RateLimitException`
+- Log downstream errors at WARN (4xx) or ERROR (5xx) level with context
+
+### Caching
+- Cache idempotent GET responses: `@Cacheable("product-details")` with TTL
+- Invalidate cache on relevant mutations: `@CacheEvict`
+- Local: Caffeine (max size, TTL); Distributed: Redis (multi-instance safe)
+- Never cache error responses or empty results (use `unless`)
+
+### Webhook Receivers
+- Always verify HMAC signature before processing webhook payload
+- Reject invalid signatures with 403 immediately — no processing
+- Check idempotency: store processed event IDs, return 200 on duplicates
+- Process asynchronously: acknowledge with 202, process in background
+- Webhook endpoints need higher timeouts and dedicated rate limits
+
+### Integration Testing
+- Use WireMock for all external API calls in tests — never hit real APIs in CI
+- Stub: success response, 4xx error, 5xx error, timeout, and retry scenarios
+- Verify auth headers are sent, error mapping works, and cache TTL is respected
+
+---
+
 ## Discovery Fallback — Greenfield Projects
 
 When the target project is empty or has no discoverable conventions:

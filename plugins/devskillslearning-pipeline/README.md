@@ -24,6 +24,7 @@ Complete AI-first Java/Spring Boot SDLC automation with GitHub project managemen
 | 16 | `perf-test` | k6/Gatling load tests, JFR/profiling, capacity planning | Before production deploy |
 | 17 | `release` | Semantic versioning, changelogs, release notes, CI release automation | When cutting a release |
 | 18 | `dependency` | OWASP scanning, version catalogs, BOMs, auto-updates | Weekly / before releases |
+| 19 | `api-integrate` | OpenAPI client gen, RestClient/WebClient, error mapping, webhooks | When calling external APIs |
 
 ---
 
@@ -263,6 +264,72 @@ Claude: [parses URL: owner=myorg, repo=payment-service, pr=89]
   [submits review to GitHub with REQUEST_CHANGES + inline comments]
 ```
 
+### Example 4: Production Hardening Flow
+
+```
+User: The order service calls payment and inventory APIs. Harden it for production.
+
+Claude: [runs design-api]
+  ✓ API contract reviewed — all endpoints have idempotency keys, RFC 7807 errors
+  ✓ Scope design: read:orders, write:orders, admin:orders
+
+User: /devskillslearning-pipeline:resilience add circuit breaker to all downstream calls
+
+Claude: [runs resilience]
+  ✓ PaymentClient: @CircuitBreaker + @Retry(3, backoff=500ms) + @TimeLimiter(5s) + @Bulkhead(10)
+  ✓ InventoryClient: @CircuitBreaker + @Retry(2, backoff=200ms) + @TimeLimiter(3s) + @Bulkhead(20)
+  ✓ NotificationClient: @CircuitBreaker + @Retry(5, backoff=1s, async)
+  ✓ Typed config records: PaymentResilienceConfig, InventoryResilienceConfig
+  ✓ Fallback methods return degraded/pending responses
+  ✓ Pattern order verified: Retry → CB → TimeLimiter → Bulkhead
+
+User: /devskillslearning-pipeline:dependency scan for vulnerabilities
+
+Claude: [runs OWASP dependency-check]
+  ✓ No HIGH or CRITICAL CVEs found
+  ✓ 2 MEDIUM — reviewed, both false positives for our usage (suppressed with justification)
+  ✓ maven-enforcer-plugin dependencyConvergence rule added
+  ✓ Renovate config generated — patch auto-merge, minor auto-PR, major approval required
+
+User: /devskillslearning-pipeline:perf-test load test the checkout endpoint, 500 RPS target
+
+Claude: [generates k6 test script from OpenAPI spec]
+  [runs load test]
+  ## Load Test Results — 500 RPS
+  p50: 45ms ✓ | p95: 210ms ✓ | p99: 480ms ✓ | Error rate: 0.1% ✓
+  Bottleneck: PaymentService.charge() avg 350ms external call
+  RECOMMEND: Add Redis cache for payment method validation (saves ~200ms)
+  Capacity: 312 RPS safe per instance → 2 instances for 500 RPS target
+
+User: /devskillslearning-pipeline:monitor set up production observability
+
+Claude: [configures monitoring]
+  ✓ Prometheus + Grafana dashboard: 5 rows, 20 panels
+  ✓ SLIs defined: availability 99.9%, p99 < 500ms
+  ✓ Alerting: ServiceDown (critical), HighErrorRate (critical), HighLatency (warning)
+  ✓ Structured JSON logging with traceId/spanId
+  ✓ Health indicators: DB, Kafka, Payment API, Inventory API
+  ✓ Grafana dashboard saved to .dashboards/order-service.json
+
+User: /devskillslearning-pipeline:deploy generate K8s manifests
+
+Claude: [generates deployment artifacts]
+  ✓ Multi-stage Dockerfile (distroless, Java 21, ZGC)
+  ✓ K8s: Deployment (3 replicas), Service, HPA (min 2, max 6, CPU 70%)
+  ✓ CI/CD: GitHub Actions — build → test → owasp → containerize → deploy
+  ✓ JVM opts: -XX:MaxRAMPercentage=75.0 -XX:+UseZGC
+
+User: /devskillslearning-pipeline:release cut v1.4.0
+
+Claude: [cuts release]
+  ✓ Version bump: 1.3.0 → 1.4.0 (minor — 2 feat commits since last tag)
+  ✓ CHANGELOG.md updated — Added, Changed, Fixed, Security sections
+  ✓ GitHub Release created with release notes
+  ✓ Next snapshot: 1.5.0-SNAPSHOT
+
+  Release v1.4.0 is live: https://github.com/acme/order-service/releases/tag/v1.4.0
+```
+
 ---
 
 ## What Each Skill Auto-Discovers
@@ -305,6 +372,7 @@ You don't need to provide these — all skills detect them automatically:
 | `perf-test` | "Load test the checkout endpoint" | Target RPS, p99 SLO, OpenAPI spec |
 | `release` | "Release v1.3.0" | Target version, version bump type |
 | `dependency` | "Scan for vulnerabilities" | Specific CVE or dependency concern |
+| `api-integrate` | "Integrate the Stripe API from their spec" | API spec URL, auth method, endpoints |
 
 ---
 

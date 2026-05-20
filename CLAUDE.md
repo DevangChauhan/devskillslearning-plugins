@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A **Claude Code marketplace** that distributes a single plugin: `devskillslearning-pipeline`. The plugin provides 18 slash-command skills (`scaffold`, `write-code`, `code-review`, `write-tests`, `refactor`, `diagnose`, `secure`, `deploy`, `document`, `migrate`, `github`, `monitor`, `design-api`, `database`, `resilience`, `perf-test`, `release`, `dependency`) for AI-assisted Java/Spring Boot development covering the full enterprise SDLC. Skills auto-detect project architecture, execution model, Spring Boot version, build system, and conventions. GitHub integration via MCP: create epics/stories/tickets, PR review by URL or ticket ID, issue management.
+A **Claude Code marketplace** that distributes a single plugin: `devskillslearning-pipeline`. The plugin provides 19 slash-command skills (`scaffold`, `write-code`, `code-review`, `write-tests`, `refactor`, `diagnose`, `secure`, `deploy`, `document`, `migrate`, `github`, `monitor`, `design-api`, `database`, `resilience`, `perf-test`, `release`, `dependency`, `api-integrate`) for AI-assisted Java/Spring Boot development covering the full enterprise SDLC. Skills auto-detect project architecture, execution model, Spring Boot version, build system, and conventions. GitHub integration via MCP: create epics/stories/tickets, PR review by URL or ticket ID, issue management.
 
 ## Repo structure
 
@@ -31,6 +31,7 @@ plugins/devskillslearning-pipeline/
     perf-test/SKILL.md                  # k6/Gatling load tests, JFR profiling, capacity planning
     release/SKILL.md                    # Semantic versioning, changelogs, release notes, CI automation
     dependency/SKILL.md                 # OWASP scanning, version catalogs, BOMs, Renovate/Dependabot
+    api-integrate/SKILL.md              # OpenAPI client gen, RestClient/WebClient, webhook receivers
   README.md                             # Usage guide with quick start and examples
   docs/CONVENTIONS.md                   # Best practices: full enterprise stack (1,700+ lines)
   docs/api-examples.md                  # Full OpenAPI, AsyncAPI, gRPC, GraphQL spec examples

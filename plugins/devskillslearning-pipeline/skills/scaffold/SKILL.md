@@ -219,7 +219,68 @@ If the user provides a minimal prompt like "create a new project called order-se
 </project>
 ```
 
-For Gradle, generate the equivalent `build.gradle.kts` with the same dependency set. For multi-module, create a root `pom.xml` with `<modules>` or root `settings.gradle` with `include`.
+**Gradle equivalent** (`build.gradle.kts`):
+
+```kotlin
+plugins {
+    java
+    id("org.springframework.boot") version "3.3.5"
+    id("io.spring.dependency-management") version "1.1.6"
+}
+
+group = "com.<company>"
+version = "0.0.1-SNAPSHOT"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom(configurations.annotationProcessor.get())
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+extra["springCloudVersion"] = "2023.0.3"
+extra["mapstructVersion"] = "1.5.5.Final"
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("io.micrometer:micrometer-tracing-bridge-brave")
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    runtimeOnly("org.postgresql:postgresql")
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+    implementation("org.mapstruct:mapstruct:${extra["mapstructVersion"]}")
+    annotationProcessor("org.mapstruct:mapstruct-processor:${extra["mapstructVersion"]}")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${extra["springCloudVersion"]}")
+    }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+```
+
+For multi-module, create a root `pom.xml` with `<modules>` or root `settings.gradle.kts` with `include(":module-name")`.
 
 ### 2c. Main application class
 
