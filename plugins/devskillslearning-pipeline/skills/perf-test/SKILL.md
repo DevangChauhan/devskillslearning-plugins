@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:perf-test
-description: Performance and load test Java/Spring Boot applications. Use when the user asks to run performance tests, create load test plans, profile application bottlenecks, generate JMeter/Gatling/k6 test scripts, analyze JFR recordings, or identify slow endpoints and queries. Covers throughput, latency, and capacity testing.
+description: Load test and profile Spring Boot apps — k6/Gatling/JMeter scripts, JFR/Async Profiler analysis, bottleneck identification. Use when: run performance tests, create load test plans, profile slow endpoints.
 type: skill
 ---
 

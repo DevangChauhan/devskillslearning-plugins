@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:release
-description: Manage software releases for Java/Spring Boot projects. Use when the user asks to create a release, generate changelogs, bump versions, write release notes, tag releases, or set up automated release workflows. Covers semantic versioning, conventional commits changelog generation, GitHub Releases, and Maven/Gradle release plugin config.
+description: Manage releases — semantic versioning, changelogs, release notes, tagging, CI release automation. Follows conventional commits and Keep a Changelog. Use when: cut a release, bump version, generate changelog.
 type: skill
 ---
 

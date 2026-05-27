@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:document
-description: Generate API documentation, architecture diagrams, and project docs for Java/Spring Boot applications. Use when the user asks to generate API docs, create OpenAPI/AsyncAPI specs, draw architecture diagrams, write ADRs, or create onboarding READMEs.
+description: Generate API docs, C4 architecture diagrams, ADRs, and READMEs for Spring Boot projects. Derives content from real code. Use when: generate OpenAPI spec, create C4 diagram, write ADR, document events.
 type: skill
 ---
 

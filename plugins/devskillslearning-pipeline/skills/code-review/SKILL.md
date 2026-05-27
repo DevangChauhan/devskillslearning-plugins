@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:code-review
-description: Review Java/Spring Boot code against architecture rules, conventions, error handling patterns, test coverage, transaction correctness, N+1 queries, caching, observability, and security. Supports reviewing local git changes, GitHub PRs via URL, and PRs linked to issue/ticket IDs. Catches issues before CI does. Use after writing code or before creating a PR.
+description: Review Spring Boot code for correctness, security, N+1 queries, and convention violations. Supports local diffs, GitHub PRs by URL, and ticket-linked PRs. Use after writing code or before creating a PR.
 type: skill
 ---
 

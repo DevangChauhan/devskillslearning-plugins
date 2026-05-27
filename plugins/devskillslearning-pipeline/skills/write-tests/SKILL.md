@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:write-tests
-description: Generate comprehensive tests for existing Java/Spring Boot code. Use when the user asks to write tests, add test coverage, or test a specific class/module. Covers unit, web layer, integration, contract, and architecture tests with systematic edge case coverage.
+description: Generate tests for Spring Boot code — unit, web layer, integration, contract, and architecture tests. Covers happy paths, error paths, and edge cases. Use when: write tests, add test coverage, test a class/module.
 type: skill
 ---
 

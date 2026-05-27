@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:diagnose
-description: Diagnose and fix Java/Spring Boot build failures, test failures, startup errors, and runtime issues. Use when the user shares a stack trace, build log, or error message. Uses systematic root cause analysis — read the error, trace the code, identify the fix.
+description: Diagnose and fix build failures, test failures, startup errors, and runtime issues in Spring Boot. Covers K8s, CI/CD, threading, and memory problems. Use when: share a stack trace, build log, or error message.
 type: skill
 ---
 

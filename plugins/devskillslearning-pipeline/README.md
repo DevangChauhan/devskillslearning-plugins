@@ -6,7 +6,8 @@ Complete AI-first Java/Spring Boot SDLC automation with GitHub project managemen
 
 | # | Skill | What It Does | Run After |
 |---|-------|-------------|-----------|
-| 1 | `scaffold` | Bootstrap a new project with best-practice foundation | — (entry point for greenfield) |
+| 0 | `workflow` | **Guided entry point** — routes you to the right skill chain | — (start here if unsure) |
+| 1 | `scaffold` | Bootstrap a new project with best-practice foundation | `workflow` (greenfield) |
 | 2 | `write-code` | Implement features with full-stack code generation | `scaffold` or when adding features |
 | 3 | `code-review` | 100+ architectural, security, and convention checks | `write-code`, before PR |
 | 4 | `write-tests` | Comprehensive test generation (unit, web, integration) | `write-code`, for existing code |
@@ -69,7 +70,9 @@ Complete AI-first Java/Spring Boot SDLC automation with GitHub project managemen
                     └──────────────────────┘
 ```
 
-**Typical greenfield flow**: `scaffold` → `design-api` → `database` → `write-code` → `write-tests` → `code-review` → `resilience` → `secure` → `perf-test` → `deploy` → `monitor` → `release`
+Not sure where to start? Use `/devskillslearning-pipeline:workflow` or see `docs/QUICK-REFERENCE.md` for an intent-based skill finder.
+
+**Typical greenfield flow**: `workflow` → `scaffold` → `design-api` → `database` → `write-code` → `write-tests` → `code-review` → `resilience` → `secure` → `perf-test` → `deploy` → `monitor` → `release`
 
 **Feature addition flow**: `github` (read ticket) → `write-code` → `write-tests` → `code-review`
 

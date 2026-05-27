@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:refactor
-description: Safely refactor Java/Spring Boot code with before/after test verification. Use when the user asks to refactor, extract a service, split a controller, convert to record, restructure packages, or clean up technical debt. Runs tests before and after to verify no regression.
+description: Safely refactor Spring Boot code with before/after test verification. Covers extract service, split controller, convert to record, remove dead code, and more. Use when: refactor, extract service, clean up technical debt.
 type: skill
 ---
 

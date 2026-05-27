@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:dependency
-description: Manage project dependencies and security vulnerabilities for Java/Spring Boot projects. Use when the user asks to scan for CVEs, audit dependencies, set up OWASP dependency-check, configure Gradle version catalogs or Maven BOMs, resolve transitive conflicts, set up Renovate or Dependabot, or upgrade dependency versions.
+description: Manage dependencies and scan for CVEs — OWASP check, version catalogs, BOMs, transitive conflict resolution, Renovate/Dependabot setup. Use when: scan for CVEs, audit deps, set up auto-updates, resolve version conflicts.
 type: skill
 ---
 

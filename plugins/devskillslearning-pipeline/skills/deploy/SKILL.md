@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:deploy
-description: Generate deployment artifacts for Java/Spring Boot applications. Use when the user asks to set up deployment, create Kubernetes manifests, generate CI/CD pipeline, write a Helm chart, or containerize an application. Detects project structure and generates appropriate artifacts.
+description: Containerize, deploy, or set up CI/CD for a Spring Boot app. Generates Dockerfiles, K8s manifests, Helm charts, and GitHub Actions pipelines. Use when: Dockerize, deploy to K8s, create CI/CD pipeline.
 type: skill
 ---
 

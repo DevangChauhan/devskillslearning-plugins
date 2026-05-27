@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:migrate
-description: Automate Java/Spring Boot version upgrades. Use when the user asks to upgrade Spring Boot (2.x→3.x), migrate javax to jakarta, upgrade Java versions, or replace deprecated APIs. Runs tests before and after to verify no regression.
+description: Automate Spring Boot/Java version upgrades with before/after test verification. Covers javax→jakarta, JUnit 4→5, Gradle upgrades, and per-version breaking changes. Use when: upgrade Spring Boot, migrate Java version, replace deprecated APIs.
 type: skill
 ---
 

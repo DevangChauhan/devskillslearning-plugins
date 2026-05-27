@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:write-code
-description: Write Java/Spring Boot implementation code following best practices. Use when the user asks to implement an endpoint, feature, or service. Auto-detects project architecture (monolith, REST microservices, event-driven), discovers conventions from the codebase, and generates controller, service, repository, entity, DTO, mapper, migration scripts, event handlers, observability, and tests as appropriate.
+description: Implement features in Spring Boot — controller, service, repository, entity, DTO, mapper, migrations, event handlers. Auto-detects architecture and conventions. Use when: add endpoint, implement feature, build CRUD API.
 type: skill
 ---
 

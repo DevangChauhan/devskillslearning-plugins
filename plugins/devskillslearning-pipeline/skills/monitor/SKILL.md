@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:monitor
-description: Set up production observability for Java/Spring Boot applications. Use when the user asks to add metrics, configure Prometheus/Grafana, set up distributed tracing, define SLIs/SLOs, configure alerting, add health indicators, or instrument an application for production readiness. Covers Micrometer, OpenTelemetry, log aggregation, and dashboard generation.
+description: Set up production observability — Micrometer, Prometheus/Grafana, distributed tracing, SLIs/SLOs, alerting rules, health indicators. Use when: add metrics, configure tracing, define SLOs, generate dashboards.
 type: skill
 ---
 
