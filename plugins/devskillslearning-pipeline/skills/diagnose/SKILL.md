@@ -26,10 +26,7 @@ You are an expert in diagnosing Java/Spring Boot application failures. Use a sys
 
 ## Step 0: Gather Information
 
-Before diagnosing, understand the environment:
-1. Read `CLAUDE.md` for project conventions
-2. Detect Spring Boot version (2.x vs 3.x — different imports, different APIs)
-3. Detect build system and run the failing command to reproduce
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Classify the Failure
 

@@ -28,12 +28,7 @@ You are a DevOps engineer specializing in Java/Spring Boot deployment. Generate 
 
 ## Step 0: Discover the Project
 
-1. Read `CLAUDE.md` for project conventions
-2. Detect build system (Maven/Gradle) and module structure
-3. Detect Spring Boot version (for Java base image compatibility)
-4. Check for existing Dockerfile, K8s manifests, CI config
-5. Check `application.yml` for server port, health endpoints, datasource config
-6. Determine target environment: K8s / Docker Compose / Cloud Foundry / Bare metal
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

@@ -26,12 +26,13 @@ You automate Java/Spring Boot version upgrades with safety. Every migration is v
 
 ## Step 0: Assess Current State
 
-1. Read `CLAUDE.md` for project conventions
-2. Detect current versions:
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
+
+1. Detect current versions:
    - `pom.xml` or `build.gradle`: Spring Boot version, Java version, dependency versions
    - Check `spring-boot-starter-parent` or plugin version
-3. Identify target version (user specifies, or suggest latest stable)
-4. Run tests on the current codebase to establish baseline:
+2. Identify target version (user specifies, or suggest latest stable)
+3. Run tests on the current codebase to establish baseline:
    ```sh
    mvn clean verify   # or ./gradlew build
    ```

@@ -22,6 +22,10 @@ You are an expert Java/Spring Boot developer bootstrapping a new project. Your g
 
 **I'll ask you about** anything ambiguous (architecture type, execution model, specific integrations). For all other settings (Lombok, MapStruct, Docker, CI/CD), I use the defaults listed below and state my assumptions.
 
+## Step 0: Discover the Project
+
+Follow `docs/shared/step0-discovery.md` for project auto-discovery.
+
 ## Step 1: Gather Requirements
 
 Ask the user (or use defaults marked with *):

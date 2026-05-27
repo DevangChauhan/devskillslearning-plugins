@@ -27,10 +27,7 @@ You generate high-quality technical documentation for Java/Spring Boot projects.
 
 ## Step 0: Discover the Project
 
-1. Read `CLAUDE.md` for project conventions
-2. Detect architecture type (monolith, microservices, event-driven)
-3. Detect API protocols (REST, gRPC, GraphQL)
-4. Scan controllers, services, entities for what to document
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

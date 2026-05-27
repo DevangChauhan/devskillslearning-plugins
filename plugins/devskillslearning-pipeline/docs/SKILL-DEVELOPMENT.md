@@ -166,8 +166,49 @@ See `docs/api-examples.md` for the full annotated OpenAPI example.
 This keeps skills lean — the skill teaches the WHY and HOW; the reference file shows the full WHAT.
 
 **Existing reference files:**
-- `docs/CONVENTIONS.md` — universal best practices (referenced by all skills as fallback when project conventions can't be discovered)
+- `docs/CONVENTIONS.md` — index of best practices (references all shared pattern files)
 - `docs/api-examples.md` — full OpenAPI, AsyncAPI, gRPC, GraphQL spec examples (referenced by `design-api` and `document`)
+
+## Shared Pattern Files (docs/shared/)
+
+Canonical patterns live in `docs/shared/` as single source of truth. Skills reference these instead of inlining duplicated content.
+
+```
+docs/shared/
+  step0-discovery.md          # Universal project discovery — referenced by every skill's Step 0
+  patterns/
+    jpa-entities.md           # Entity conventions, auditing, UUID PKs, @Version
+    jpa-transactions.md       # @Transactional rules, self-invocation, rollback
+    jpa-queries.md            # N+1 detection, EntityGraph, batch fetching, caching
+    exceptions.md             # Domain exceptions, error codes, Problem Details (RFC 7807)
+    dtos.md                   # Records, BigDecimal, @Valid, Instant vs Date
+    controllers.md            # Endpoints, versioning, idempotency, response wrapping
+    security.md               # OAuth2/JWT, CORS, CSRF, rate limiting, audit logging
+    resilience.md             # Circuit breaker, retry, timeout, bulkhead
+    naming.md                 # Tables, endpoints, events, packages
+    observability.md          # Structured logging, @Timed, custom counters, tracing
+    configuration-props.md    # @ConfigurationProperties, kebab-case, Duration
+```
+
+**Rules for shared files:**
+- Each file is 50–120 lines — small enough to load without significant context cost
+- Skills reference them with a short summary + pointer: "See `docs/shared/patterns/jpa-entities.md` for full conventions"
+- Skills still include brief inline checklists so they remain self-readable
+- When updating a pattern, update the shared file — all skills that reference it stay current
+- New shared files get added to the index above and to `CONVENTIONS.md`
+
+### Step 0: Universal Discovery
+
+Every skill's Step 0 should reference `docs/shared/step0-discovery.md` instead of repeating the full discovery checklist:
+
+```markdown
+## Step 0: Discover the Project
+
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version,
+architecture type, package layout, and all project conventions.
+```
+
+Skills that need additional domain-specific discovery (e.g., `write-tests` checking test frameworks) add those specifics after the reference.
 
 ## CONVENTIONS.md Integration
 

@@ -26,78 +26,9 @@ You are an expert Java/Spring Boot developer implementing features. Follow the c
 
 ## Step 0: Discover the Project
 
-Before writing any code, understand the target project.
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, error handling patterns, libraries, and all project conventions.
 
-### 0a. Read project-level documentation
-- `CLAUDE.md` at the project root — the primary source of project conventions
-- `.cursor/rules/` or `.github/copilot-instructions.md` if present
-
-### 0b. Detect build system
-- Look for `pom.xml` (Maven) or `build.gradle` / `build.gradle.kts` (Gradle)
-- Check if multi-module: `<modules>` in root `pom.xml` or `include` directives in `settings.gradle`
-- Note the build command and module-specific syntax for later verification
-
-### 0c. Detect architecture type
-Scan the codebase and determine:
-- **Monolith**: Single deployable, shared DB, no service discovery, direct method calls between modules
-- **REST Microservices**: Per-service DB, OpenAPI specs, REST clients (`@FeignClient`, `RestTemplate`, `WebClient`), service discovery
-- **Event-Driven Microservices**: Message broker dependencies (Kafka, RabbitMQ), `@KafkaListener`, `StreamBridge`, event classes, outbox tables
-- **gRPC services**: `grpc-spring-boot-starter` or `grpc-server-spring-boot-starter` on classpath — use `.proto` files, `@GrpcService`, protobuf stubs
-- **GraphQL services**: `spring-boot-starter-graphql` on classpath — use `.graphqls` schema, `@QueryMapping`/`@MutationMapping`
-
-Ask the user if ambiguous.
-
-### 0d. Detect execution model
-- **Servlet/Blocking** (default): `spring-boot-starter-web` on classpath — use `JpaRepository`, `@Transactional`, standard return types
-- **Reactive/Non-blocking**: `spring-boot-starter-webflux` on classpath (without `spring-boot-starter-web`) — use `R2dbcRepository`, `Mono<T>`/`Flux<T>`, no `@Transactional`, `WebTestClient` for tests
-- If both `web` and `webflux` starters are present, ask the user which model the project uses — mixed is unusual
-- Reactive stack implications: R2DBC instead of JDBC, Netty instead of Tomcat, `ReactiveCrudRepository` instead of `JpaRepository`, manual UUID assignment instead of `@GeneratedValue`, no `Pageable` support
-
-### 0e. Detect Spring Boot version (CRITICAL)
-- Read `<version>` from `spring-boot-starter-parent` in `pom.xml`, or `springBootVersion` / plugin version in `build.gradle`
-- **Spring Boot 3.x** → all imports use `jakarta.*` (`jakarta.persistence.*`, `jakarta.validation.*`, `jakarta.servlet.*`)
-- **Spring Boot 2.x** → all imports use `javax.*` (`javax.persistence.*`, `javax.validation.*`, `javax.servlet.*`)
-- **Spring Security 6.x** (Spring Boot 3.x) → Lambda DSL: `http.cors(c -> {}).csrf(c -> c.disable())`
-- **Spring Security 5.x** (Spring Boot 2.x) → Builder DSL: `http.cors().and().csrf().disable()`
-- Default to 3.x / Jakarta for greenfield projects
-
-### 0f. Discover project conventions
-- **Package root**: Find `@SpringBootApplication` class, note its package
-- **Sub-package layout**: Check if the project uses package-by-layer (`*.controller`, `*.service`, etc.) or package-by-feature
-- **Base exception**: Scan for classes extending `RuntimeException` used across the project
-- **Error code enum**: Look for enums with `code`, `message`, `httpStatus` fields
-- **Response wrapper**: Scan controller return types — is there a generic wrapper (e.g., `ApiResponse<T>`) or bare `ResponseEntity<T>`?
-- **Global exception handler**: Find `@RestControllerAdvice` class
-- **Migration tool**: Check for `flyway-core` or `liquibase-core` in dependencies
-- **MapStruct usage**: Check if `@Mapper(componentModel = "spring")` exists in the codebase
-- **Lombok usage**: Check if Lombok annotations are used or if explicit code is preferred
-- **Java version**: From `pom.xml` `<java.version>` or `build.gradle` `sourceCompatibility`
-- **Observability stack**: Check for Micrometer, Sleuth, OpenTelemetry dependencies
-
-### 0g. Locate API contracts (if any)
-- OpenAPI specs: search for `*.yaml`, `*.json` in `src/main/resources/openapi/` or `api/` directories
-- Generated interfaces: check `target/generated-sources/openapi/` or build plugin config
-- Async API specs (event-driven projects): search for `asyncapi.yaml` or event schema files
-- If no API specs exist, the skill works from user descriptions and applies REST best practices
-
-### 0h. Understand the target service/module
-- Read existing code in the module's `controller/`, `service/`, `repository/`, `entity/` packages
-- Note the patterns already in use — match them
-- If the module is new/empty, establish conventions consistent with sibling modules
-
-### 0i. Discovery Fallback — Greenfield Projects
-
-If the project is brand new (no `@SpringBootApplication`, no entities, no controllers):
-
-1. **Do not error out** — bootstrap the project structure first
-2. **Establish conventions before implementing features** (see Step 1b)
-3. **Assume sensible defaults** and state them to the user:
-   - Spring Boot 3.x (Jakarta)
-   - Maven if `pom.xml` exists, else ask Maven vs Gradle
-   - Flyway for migrations
-   - Lombok + MapStruct for boilerplate reduction
-   - Java records for DTOs
-   - UUID PKs with `GenerationType.UUID`
+For greenfield projects (no existing code), bootstrap the project structure first: establish root package, error code enum, base exception, response wrapper, and global exception handler. Default to Spring Boot 3.x, Java 21, Maven, Flyway, Lombok, MapStruct.
    - Package-by-layer layout
 4. **Create a minimal `CLAUDE.md`** documenting the decisions so future invocations stay consistent
 

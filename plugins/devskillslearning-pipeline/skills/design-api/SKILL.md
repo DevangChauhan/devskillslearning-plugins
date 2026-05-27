@@ -28,12 +28,7 @@ You are an API architect designing contracts before a single line of implementat
 
 ## Step 0: Discover the Project
 
-1. Read `CLAUDE.md` for project conventions
-2. Check for existing API specs in `src/main/resources/openapi/`, `src/main/proto/`, `src/main/resources/graphql/`
-3. Check if `openapi-generator-maven-plugin` or `protobuf-maven-plugin` is configured
-4. Check existing controller patterns: URL structure, response wrappers, error formats
-5. Check `application.yml` for `server.servlet.context-path`, API gateway routes
-6. Determine the API style(s) in use: REST, gRPC, GraphQL, AsyncAPI (events), or mixed
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

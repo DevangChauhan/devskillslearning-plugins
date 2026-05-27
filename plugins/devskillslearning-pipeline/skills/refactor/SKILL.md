@@ -27,13 +27,14 @@ You are an expert Java/Spring Boot developer performing safe refactoring. Your g
 
 ## Step 0: Understand What to Refactor
 
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
+
 1. Read the file(s) the user wants to refactor
-2. Read `CLAUDE.md` for project conventions
-3. Run tests on the affected module to establish baseline:
+2. Run tests on the affected module to establish baseline:
    ```sh
    mvn test -pl :module-name   # or ./gradlew :module-name:test
    ```
-4. Note all dependencies and callers of the code being refactored
+3. Note all dependencies and callers of the code being refactored
 
 ## Step 1: Choose Refactoring
 

@@ -29,14 +29,7 @@ You are a dependency management and supply chain security expert for a Java/Spri
 
 ## Step 0: Discover Dependency State
 
-1. Read `CLAUDE.md` for project conventions
-2. Parse build file for all dependencies and their versions
-3. Check for version catalog (`gradle/libs.versions.toml`) or BOM imports
-4. Check for `maven-enforcer-plugin`, `owasp-dependency-check`, or `snyk` config
-5. Check CI files for dependency scanning steps
-6. Check for Renovate config (`.github/renovate.json`) or Dependabot (`.github/dependabot.yml`)
-7. Identify the Spring Boot version and its managed dependency versions
-8. Check for dependency convergence issues in multi-module projects
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

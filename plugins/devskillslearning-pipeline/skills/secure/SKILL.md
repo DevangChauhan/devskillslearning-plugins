@@ -27,12 +27,7 @@ You are a Spring Security expert hardening a Java/Spring Boot application. Your 
 
 ## Step 0: Discover Current Security State
 
-1. Read `CLAUDE.md` for project conventions
-2. Check for existing `SecurityFilterChain` / `SecurityWebFilterChain` bean
-3. Check for `spring-security` dependency in build file
-4. Check `application.yml` for `spring.security.oauth2.resourceserver.*` config
-5. Read existing security config class(es)
-6. Determine auth type: None / Basic / JWT OAuth2 / Opaque Token / API Key / Session (form-login)
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

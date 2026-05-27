@@ -28,16 +28,7 @@ You are a resilience engineer hardening a Java/Spring Boot application against d
 
 ## Step 0: Discover Current Resilience State
 
-1. Read `CLAUDE.md` for project conventions
-2. Check build file for `resilience4j-*` dependencies
-3. Check `application.yml` for `resilience4j.*` config sections
-4. Scan for downstream calls:
-   - `WebClient`, `RestClient`, `RestTemplate` in service classes
-   - `@FeignClient` interfaces
-   - `StreamBridge` or `KafkaTemplate` for message publishing
-   - `JdbcTemplate`, `Jooq`, or raw `DataSource` calls
-5. Check for existing `@CircuitBreaker`, `@Retry`, `@Bulkhead`, `@RateLimiter` annotations
-6. Check if Micrometer is already configured (for resilience metrics)
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

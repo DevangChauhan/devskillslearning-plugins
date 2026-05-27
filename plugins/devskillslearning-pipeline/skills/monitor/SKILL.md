@@ -29,15 +29,7 @@ You are an SRE/observability expert instrumenting a Java/Spring Boot application
 
 ## Step 0: Discover Current Observability State
 
-1. Read `CLAUDE.md` for project conventions
-2. Check build file for observability dependencies:
-   - `micrometer-registry-prometheus`, `micrometer-registry-datadog`, `micrometer-registry-otlp`
-   - `micrometer-tracing-bridge-brave`, `micrometer-tracing-bridge-otel`
-   - `spring-boot-starter-actuator`
-3. Check `application.yml` for `management.*` config
-4. Check for existing `@Timed`, `MeterRegistry`, `ObservationRegistry` usage
-5. Check for custom `HealthIndicator` beans
-6. Determine the observability gap: nothing → full setup; partial → fill gaps
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

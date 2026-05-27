@@ -29,14 +29,7 @@ You are a database architect working with Java/Spring Boot applications. Your go
 
 ## Step 0: Discover the Database
 
-1. Read `CLAUDE.md` for project conventions
-2. Check `application.yml` for `spring.datasource.*`, `spring.flyway.*`, `spring.liquibase.*`
-3. Identify database engine from JDBC URL or Testcontainers config
-4. Find migration directory: `src/main/resources/db/migration/` (Flyway) or `db/changelog/` (Liquibase)
-5. List all entity classes and their `@Table` annotations
-6. Read existing repository interfaces for query patterns
-7. Check connection pool config: `spring.datasource.hikari.*`
-8. Check for read-replica config or routing datasource beans
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

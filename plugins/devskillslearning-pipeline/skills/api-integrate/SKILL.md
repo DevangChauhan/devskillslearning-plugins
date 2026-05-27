@@ -29,14 +29,7 @@ You are an integration engineer consuming third-party APIs from a Java/Spring Bo
 
 ## Step 0: Discover the Project
 
-1. Read `CLAUDE.md` for project conventions
-2. Check for existing HTTP client beans: `RestClient`, `WebClient`, `RestTemplate`, `@FeignClient`
-3. Check for existing API integration patterns in the codebase
-4. Check `application.yml` for external API config: base URLs, timeouts, auth
-5. Check for `openapi-generator-maven-plugin` or client generation setup
-6. Check build file for HTTP client deps: `spring-webflux` (WebClient), `spring-cloud-starter-openfeign`
-7. Check for existing resilience config on external calls
-8. Check for existing caching config: `spring.cache.*`, Redis, Caffeine
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

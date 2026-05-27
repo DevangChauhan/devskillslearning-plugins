@@ -26,17 +26,7 @@ You are an expert in testing Java/Spring Boot applications. Generate comprehensi
 
 ## Step 0: Discover the Project
 
-Before writing tests:
-
-1. Read `CLAUDE.md` at the project root
-2. Identify:
-   - **Build system** and test commands (Maven/Gradle, single/multi-module)
-   - **Spring Boot version** (2.x → javax, 3.x → jakarta)
-   - **Test frameworks in use**: JUnit 5, Mockito, Testcontainers, RestAssured, ArchUnit, AssertJ, Awaitility
-   - **Database**: PostgreSQL, MySQL, H2, embedded
-   - **Message broker**: Kafka, RabbitMQ, embedded, Testcontainers
-3. Read the class(es) to test — understand every public method, dependency, and edge case
-4. Check existing tests for patterns — match the existing style
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, test frameworks (JUnit 5, Mockito, Testcontainers, RestAssured, ArchUnit, AssertJ, Awaitility), database type, and message broker. Then read the class(es) to test and check existing tests for style patterns to match.
 
 ## Step 1: Determine Scope
 

@@ -66,6 +66,8 @@ Review the PR linked to ticket #15 in devangchauhan/myproject
 
 ## Step 0: Determine What's Needed
 
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
+
 Read the user's request and classify it into one of these workflows:
 
 | User intent | Workflow |

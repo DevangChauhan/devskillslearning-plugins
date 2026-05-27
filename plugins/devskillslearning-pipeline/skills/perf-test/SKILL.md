@@ -30,13 +30,7 @@ You are a performance engineer testing a Java/Spring Boot application. Your goal
 
 ## Step 0: Discover Performance Context
 
-1. Read `CLAUDE.md` for project conventions
-2. Check for existing test plans: `src/test/*/jmeter/`, `src/test/*/gatling/`, `k6/`, `*.js`
-3. Read OpenAPI specs for endpoint definitions (to auto-generate test scripts)
-4. Check `application.yml` for server config (thread pool, connection timeout, keep-alive)
-5. Check JVM config: `-Xmx`, `-Xms`, GC settings in build scripts or Dockerfile
-6. Check connection pool config: `spring.datasource.hikari.*`, HTTP client pool
-7. Note the build system and test framework for integration
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Scope
 

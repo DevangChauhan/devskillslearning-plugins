@@ -29,13 +29,7 @@ You are a release manager for a Java/Spring Boot project. Your goal: cut clean, 
 
 ## Step 0: Discover Release State
 
-1. Read `CLAUDE.md` for project conventions
-2. Check build file for current version (`pom.xml` `<version>` or `build.gradle` `version`)
-3. Check git tags: `git tag --sort=-v:refname | head -10`
-4. Analyze commit history since last tag for version bump type
-5. Check for existing release config: `.releaserc`, `release.config.js`, `semantic-release` deps
-6. Check CI/CD for release workflow: `.github/workflows/release.yml`, `Jenkinsfile`
-7. Check if Maven/Gradle release plugin is configured
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 ## Step 1: Determine Version Bump
 

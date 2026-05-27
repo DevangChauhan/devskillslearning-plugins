@@ -136,18 +136,7 @@ Read the diff and all changed files. Then proceed with the full review below, ap
 
 ## Step 0: Discover the Project
 
-Before reviewing, understand the target:
-
-1. Read `CLAUDE.md` at the project root — the primary source of conventions
-2. Scan changed files for context — note the architecture type, package structure, and patterns in use
-3. Detect:
-   - **Build system**: Maven or Gradle (single or multi-module)
-   - **Architecture type**: Monolith, REST microservices, event-driven microservices
-   - **Spring Boot version**: 2.x (javax.*) or 3.x (jakarta.*)
-   - **Package layout**: Package-by-layer or package-by-feature
-   - **Error handling**: Base exception class, error code enum, response wrapper
-   - **Libraries**: Lombok, MapStruct, Testcontainers, Flyway, Liquibase, Micrometer
-   - **Migration tool**: Flyway or Liquibase (check for migration file changes alongside entity changes)
+Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, error handling patterns, libraries, and migration tool.
 
 ## Step 1: Identify What Changed
 
@@ -231,123 +220,72 @@ Flag when imports don't match the detected Spring Boot version:
 
 ## Transaction Correctness (HIGH)
 
-These issues cause data corruption at runtime but compile fine:
+These issues cause data corruption at runtime but compile fine. See `docs/shared/patterns/jpa-transactions.md` for full rules. Key checks:
 
 | Check | What to look for |
 |-------|-----------------|
-| Self-invocation | `@Transactional` on method called from same class via `this.method()` — Spring AOP doesn't intercept. **Fix**: inject `self` proxy or move to separate service |
-| Read-only writes | Write operations inside `@Transactional(readOnly = true)` method or class. **Fix**: remove `readOnly` or move write to separate method |
-| Missing transaction | Database writes without `@Transactional`. **Fix**: add `@Transactional` |
-| Overly broad transaction | `@Transactional` on controller or on method that does non-DB work (HTTP calls, file I/O). **Fix**: move `@Transactional` to service layer only |
-| Rollback semantics | Checked exceptions do NOT trigger rollback by default — only unchecked. Flag if `catch` swallows without rethrow |
-| Propagation mismatch | `@Transactional(propagation = REQUIRES_NEW)` used incorrectly, creating unintended independent transactions |
-| `@Version` missing | Entity with concurrent update risk but no `@Version` field for optimistic locking |
+| Self-invocation | `@Transactional` on method called from same class via `this.method()` |
+| Read-only writes | Write operations inside `@Transactional(readOnly = true)` |
+| Missing transaction | Database writes without `@Transactional` |
+| Overly broad transaction | `@Transactional` on controller or method doing non-DB work |
+| Rollback semantics | Checked exceptions swallowed without rethrow |
+| `@Version` missing | Entity with concurrent update risk but no optimistic locking |
 
 ## N+1 Query Detection (HIGH)
 
-The most common performance bug in JPA code:
+The most common performance bug in JPA code. See `docs/shared/patterns/jpa-queries.md` for full detection rules and fixes.
 
 | Pattern | Detection | Fix |
 |---------|-----------|-----|
-| Loop fetch | `for`/`forEach` loop calling `repository.find*()` or accessing lazy-loaded collection | Use `@EntityGraph`, JOIN FETCH, or batch fetch |
-| Eager loading | `@OneToMany(fetch = EAGER)` or `@ManyToOne(fetch = EAGER)` causing cartesian products | Use `LAZY` + explicit `@EntityGraph` where needed |
-| Missing batch size | `@OneToMany` without `@BatchSize(size = 20)` causing per-entity lazy-load queries | Add `@BatchSize` or configure `hibernate.default_batch_fetch_size` |
-| DTO projection loop | Fetching entities then mapping in a loop instead of using DTO projection in query | Use `@Query("SELECT new com.x.dto.XxxDto(...) FROM ...")` |
+| Loop fetch | `for`/`forEach` loop calling `repository.find*()` | `@EntityGraph`, JOIN FETCH, or batch fetch |
+| Eager loading | `@OneToMany(fetch = EAGER)` causing cartesian products | Use `LAZY` + explicit `@EntityGraph` |
+| Missing batch size | `@OneToMany` without `@BatchSize` | Add `@BatchSize(size = 20)` |
+| DTO projection loop | Fetch entities then map in loop | Use DTO projection in query |
 
 **Flag any loop containing a repository call as HIGH.**
 
 ## Caching Correctness (MEDIUM)
 
-| Check | What to look for |
-|-------|-----------------|
-| Missing cache | Service method that calls external system or does expensive computation without `@Cacheable` |
-| Stale cache | `@CachePut` without corresponding `@CacheEvict` on the write path, or vice versa |
-| Missing eviction | Entity updated/deleted but related caches not evicted — flag any save/delete without corresponding `@CacheEvict` |
-| Wrong key | `@Cacheable` with non-unique key (e.g., just `"accounts"` instead of `"accounts_" + #id`) |
-| Cache on self-invocation | `@Cacheable` on method called from same class — Spring AOP won't intercept (same as transactional self-invocation) |
+See `docs/shared/patterns/jpa-queries.md` for caching patterns (self-invocation, key design, eviction). Flag: missing `@Cacheable` on expensive calls, stale cache from missing eviction, wrong cache keys.
 
 ## Configuration Properties (MEDIUM)
 
-| Check | What to look for |
-|-------|-----------------|
-| Scattered `@Value` | Multiple `@Value` fields across classes that should be grouped into one `@ConfigurationProperties` class |
-| Missing validation | `@ConfigurationProperties` without `@Validated` or without validation annotations on required fields |
-| Wrong prefix case | Prefix uses camelCase or snake_case instead of **kebab-case** (`orders.retry`, not `ordersRetry` or `orders_retry`) |
-| Missing `@ConstructorBinding` | Spring Boot 2.x `@ConfigurationProperties` record without `@ConstructorBinding` |
-| Wrong package | `@ConfigurationProperties` class not in `*.config` package |
-| No `@ConfigurationPropertiesScan` | `@ConfigurationProperties` class not scanned — no `@ConfigurationPropertiesScan` on main or `@EnableConfigurationProperties` on config |
-| `application.yml` mismatch | Config properties class defines fields not present in `application.yml` with no defaults, or YAML keys don't match kebab-case field names |
-| `Duration` type misuse | Using `long`/`int` for durations instead of `java.time.Duration` (Spring Boot auto-converts `2s`, `500ms`) |
-| Secrets in config | Config properties holding secrets (API keys, passwords) without using `spring-config-encrypt` or vault |
+See `docs/shared/patterns/configuration-props.md` for full rules. Flag: scattered `@Value`, missing `@Validated`, wrong prefix case (must be kebab-case), `long`/`int` for durations (use `Duration`), secrets in plaintext config.
 
 ## Convention Checks
 
-### Entities
-- [ ] `@Getter` + `@Setter` + `@NoArgsConstructor` individually — not `@Data`
-- [ ] Table name is plural snake_case
-- [ ] Has `createdAt` and `updatedAt` audit fields
-- [ ] Has `@Version` for optimistic locking (if entity experiences concurrent updates)
-- [ ] UUID PK with `GenerationType.UUID` (or `GenerationType.IDENTITY` for MySQL)
-- [ ] Enums use `@Enumerated(EnumType.STRING)`
-- [ ] No business logic in entity (no `@Transactional`, no service/repository calls)
-- [ ] Monetary fields have explicit `precision` and `scale` on `@Column`
+### Entities — see `docs/shared/patterns/jpa-entities.md`
+- [ ] `@Getter` + `@Setter` + `@NoArgsConstructor` — never `@Data`
+- [ ] Audit fields (`createdAt`, `updatedAt`), `@Version` for concurrent updates, UUID PKs, `EnumType.STRING`
+- [ ] No business logic in entities; monetary fields have `precision`/`scale`
 
 ### Database Migration
-- [ ] Every new entity or schema change has a corresponding migration file in the diff
-- [ ] Migration includes indexes for foreign keys and frequently queried columns
-- [ ] Migration includes rollback (Flyway: comment; Liquibase: rollback block)
-- [ ] Migration uses `IF NOT EXISTS` for idempotency
-- [ ] Consistent migration tool usage — no mixing Flyway and Liquibase migrations in the same module
-- [ ] For comprehensive schema design, indexing strategy, and no-downtime migration safety review, use `/devskillslearning-pipeline:database`
+- [ ] Every entity/schema change has a corresponding migration file
+- [ ] Migration includes indexes, rollback, and `IF NOT EXISTS`
+- [ ] Consistent tool usage (Flyway or Liquibase, not both)
+- [ ] For comprehensive review: `/devskillslearning-pipeline:database`
 
-### DTOs
-- [ ] Java records used (immutable) — classes only if mutability required
-- [ ] Monetary fields use `BigDecimal`, not `Double`/`float`
-- [ ] Request DTOs have `@NotNull`/`@Valid` constraints
-- [ ] Fields match the API spec (OpenAPI or user spec) exactly
-- [ ] `Instant` used for timestamps, not `Date`
+### DTOs — see `docs/shared/patterns/dtos.md`
+- [ ] Java records, `BigDecimal` for money, `Instant` for timestamps, `@Valid` constraints
+- [ ] Fields match API spec exactly; per-version DTOs
 
-### Controllers
-- [ ] Implements OpenAPI-generated interface (when `openapi-generator` plugin is used)
-- [ ] `@Validated` on class
-- [ ] `@Valid` on request bodies
-- [ ] Zero business logic — only validation + delegation + response wrapping
-- [ ] Constructor injection
-- [ ] Response wrapped in project's standard wrapper or `ResponseEntity<T>`
-- [ ] Mutating endpoints (POST/PUT/PATCH) accept `Idempotency-Key` header and handle deduplication
-- [ ] `Idempotency-Replayed: true` header returned on duplicated responses
-- [ ] API versioning strategy consistent: all controllers use same strategy (URI / header / param)
-- [ ] Separate DTOs per version — never shared between v1 and v2
-- [ ] Deprecated endpoints use `Sunset` and `Deprecation` headers
+### Controllers — see `docs/shared/patterns/controllers.md`
+- [ ] `@Validated`, `@Valid`, constructor injection, zero business logic
+- [ ] `Idempotency-Key` header on all mutating endpoints
+- [ ] Consistent API versioning; deprecated endpoints use `Sunset` header
 
-### Services
-- [ ] `@Transactional` on implementation class
-- [ ] `@Transactional(readOnly = true)` on read methods
-- [ ] Business logic in service, not controller
-- [ ] Throws domain exceptions using the project's exception hierarchy
-- [ ] Uses the project's error code enum, not ad-hoc strings
-- [ ] One service interface per aggregate
-- [ ] No self-invocation of `@Transactional` or `@Cacheable` methods
+### Services — see `docs/shared/patterns/jpa-transactions.md`
+- [ ] `@Transactional` on impl, `readOnly = true` on reads
+- [ ] Business logic in service only; throws domain exceptions; no self-invocation
 
-### Exception Handling
-- [ ] Domain exceptions extend the project's base exception (or `RuntimeException`)
-- [ ] Error codes reference the project's error code enum
-- [ ] `@RestControllerAdvice` handles all domain exceptions
-- [ ] No `catch (Exception e)` that swallows silently — always log or rethrow
-- [ ] Catch-all for unexpected exceptions (500) with no details leaked to client
+### Exception Handling — see `docs/shared/patterns/exceptions.md`
+- [ ] Domain exceptions use error code enum; `@RestControllerAdvice` handles all
+- [ ] No silent `catch (Exception e)`; 500 catch-all leaks no details
 
-### Naming
-
-| Check | Rule |
-|-------|------|
-| Controller methods | `getX`, `createX`, `updateX`, `deleteX` |
-| REST paths | Plural nouns (e.g., `/api/v1/accounts`) |
-| DB tables | Plural snake_case |
-| Service interface | `XxxService` |
-| Service impl | `XxxServiceImpl` |
-| Mapper (MapStruct) | `XxxMapper` |
-| Event classes | Past-tense verb + noun: `AccountCreatedEvent`, `PaymentProcessedEvent` |
-| Event topics/channels | Descriptive kebab-case or dot-notation per project convention |
+### Naming — see `docs/shared/patterns/naming.md`
+- [ ] Controllers: `getX/createX/updateX/deleteX`; REST paths: plural nouns
+- [ ] Services: `XxxService`/`XxxServiceImpl`; Mappers: `XxxMapper`
+- [ ] Events: past-tense `AccountCreatedEvent`; DB tables: plural snake_case
 
 ## Architecture-Specific Checks
 
@@ -418,13 +356,11 @@ The most common performance bug in JPA code:
 - [ ] No blocking calls inside reactive chains without `.subscribeOn(Schedulers.boundedElastic())`
 
 ### Resilience (HIGH for external calls)
-- [ ] All external service calls have retry + timeout + circuit breaker configured
-- [ ] Fallback methods defined for every circuit breaker — not just throwing
-- [ ] Retry uses exponential backoff with jitter (not fixed interval)
-- [ ] Bulkhead limits concurrent calls to prevent cascading failure
-- [ ] `server.shutdown: graceful` + `spring.lifecycle.timeout-per-shutdown-phase` configured
-- [ ] Rate limiter at service level for expensive operations (not just API gateway)
-- [ ] Use `/devskillslearning-pipeline:resilience` for comprehensive Resilience4j setup with typed config records
+
+See `docs/shared/patterns/resilience.md` for full Resilience4j patterns.
+- [ ] All external calls: retry + timeout + circuit breaker + bulkhead
+- [ ] Fallback methods defined; exponential backoff with jitter; graceful shutdown configured
+- [ ] For comprehensive setup: `/devskillslearning-pipeline:resilience`
 
 ### Spring Batch (MEDIUM)
 - [ ] Chunk size configured (not default Integer.MAX_VALUE)
@@ -479,16 +415,11 @@ The most common performance bug in JPA code:
 
 ## Observability Checks (MEDIUM)
 
-- [ ] `@Slf4j` (or logger field) present on every class with business logic
-- [ ] Structured logging used: `log.info("{}", value)` — not string concatenation or `.toString()`
-- [ ] No logging of request bodies or headers without sanitization (PII leak)
-- [ ] `@Timed` on every controller endpoint and service methods calling external systems
-- [ ] Custom counters for business events (entity created, status changed, payment processed)
-- [ ] Health indicator for critical downstream dependencies
-- [ ] Correlation / trace ID propagation through the call chain
-- [ ] `log.error()` includes the exception as second argument, not just `ex.getMessage()`
-- [ ] For full observability review (Prometheus, Grafana, alerting, SLIs), use `/devskillslearning-pipeline:monitor`
-- [ ] For performance bottleneck identification under load, use `/devskillslearning-pipeline:perf-test`
+See `docs/shared/patterns/observability.md` for full metrics, tracing, and alerting patterns.
+- [ ] `@Slf4j` on every class; structured logging; no PII in logs
+- [ ] `@Timed` on endpoints and external calls; custom business counters
+- [ ] Health indicators for downstream deps; trace ID propagation
+- [ ] For comprehensive review: `/devskillslearning-pipeline:monitor`, for profiling: `/devskillslearning-pipeline:perf-test`
 
 ## Test Review
 
@@ -508,64 +439,23 @@ For each production class, check:
 
 ## Security Checks
 
+See `docs/shared/patterns/security.md` for full patterns (OAuth2/JWT, CORS, CSRF, rate limiting, audit logging). Key checks:
+
 ### Data Protection (BLOCKER/HIGH)
-- [ ] No credentials or secrets hardcoded in code or config — use Vault, K8s Secrets, or encrypted config
-- [ ] Input validation on all request bodies (`@NotNull`, `@Valid`, `@Size`, etc.)
-- [ ] No raw SQL (use JPQL, Criteria API, or named queries)
-- [ ] No user input in log messages without sanitization — never log request bodies, tokens, PII
-- [ ] `@JsonIgnore` on sensitive entity fields (passwords, tokens, SSN, credit card numbers)
+- [ ] No credentials in code/config; input validation on all request bodies; no raw SQL
+- [ ] No PII/tokens in logs; `@JsonIgnore` on sensitive entity fields
 
 ### OAuth2 / JWT (HIGH)
-- [ ] `SecurityFilterChain` bean defined — not default auto-config only
-- [ ] JWT issuer URI configured — tokens validated against correct issuer
-- [ ] JWT audience validated (`spring.security.oauth2.resourceserver.jwt.audiences`)
-- [ ] Scope/role mapping correct in `JwtAuthenticationConverter` or `JwtGrantedAuthoritiesConverter`
-- [ ] No endpoints accepting unauthenticated requests except explicitly permitted ones
-- [ ] `permitAll()` only on health endpoints and public endpoints — everything else authenticated
-- [ ] `sessionCreationPolicy(STATELESS)` for REST APIs — no server-side session
-- [ ] Custom 401/403 error handlers returning standard API response format
+- [ ] `SecurityFilterChain` defined; JWT issuer/audience validated; scope mapping correct
+- [ ] `STATELESS` session; `permitAll()` only on health/public endpoints
 
 ### Method Security (HIGH)
-- [ ] `@EnableMethodSecurity` on config class (when using `@PreAuthorize`/`@PostAuthorize`)
-- [ ] Mutating endpoints protected with `@PreAuthorize` (not just path-based auth)
-- [ ] Resource ownership checked: user can only access their own data unless admin
-- [ ] `@PostFilter` on list endpoints returning multi-user data
-- [ ] SpEL expressions not vulnerable to injection — don't concatenate user input into SpEL
+- [ ] `@EnableMethodSecurity`; `@PreAuthorize` on mutating endpoints; resource ownership checked
 
-### API Key Auth (MEDIUM)
-- [ ] API keys stored hashed (bcrypt) in DB — never plaintext
-- [ ] API keys scoped to specific services with limited permissions
-- [ ] Key rotation mechanism in place (`expires_at` column, rotation endpoint)
-
-### CORS (HIGH)
-- [ ] Not using `allowedOrigins("*")` with `allowCredentials(true)` — browsers reject this
-- [ ] Origins explicitly listed — not wildcard in production
-- [ ] Only necessary HTTP methods allowed
-- [ ] Only necessary headers allowed (`Authorization`, `Content-Type`, custom headers)
-- [ ] `maxAge` set to reduce preflight requests
-
-### Rate Limiting (MEDIUM)
-- [ ] Rate limit filter or interceptor on public/mutating endpoints
-- [ ] Rate limit thresholds configurable via `@ConfigurationProperties` (not hardcoded)
-- [ ] `Retry-After` header on 429 responses
-- [ ] Rate limit endpoint excluded from actuator health (to avoid health-check rate limiting)
-
-### Audit Logging (MEDIUM)
-- [ ] Mutating operations (create, update, delete) audited: who, what, when, result
-- [ ] Auth events audited: login success/failure, token refresh, logout
-- [ ] Audit logs use `AUDIT:` prefix or structured marker for filtering
-- [ ] No PII or tokens in audit logs
-
-### CSRF (HIGH)
-- [ ] CSRF disabled only for stateless (token-based) APIs
-- [ ] CSRF enabled for session-based apps (MVC + Thymeleaf)
-- [ ] Cookies use `SameSite=Strict` or `SameSite=Lax`
-
-### Security Headers (MEDIUM)
-- [ ] `Content-Security-Policy` configured
-- [ ] `X-Frame-Options: DENY`
-- [ ] `X-Content-Type-Options: nosniff`
-- [ ] `Strict-Transport-Security` in production (HTTPS enforced)
+### CORS / CSRF / Rate Limiting / Audit Logging
+- [ ] CORS: explicit origins, no wildcard + credentials; CSRF disabled for stateless APIs
+- [ ] Rate limits configurable via `@ConfigurationProperties`; `Retry-After` on 429
+- [ ] Audit mutating operations and auth events with `AUDIT:` prefix
 
 ## Severity
 
