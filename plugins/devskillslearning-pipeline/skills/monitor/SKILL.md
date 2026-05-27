@@ -41,7 +41,7 @@ Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot vers
 | "Generate dashboard" | Grafana dashboard JSON with key panels |
 | "Add alerting" | Prometheus alerting rules or Datadog monitors with thresholds |
 | "Full production readiness" | Metrics + tracing + health checks + dashboards + alerting |
-| "Add log aggregation" | Structured logging config, MDC context, correlation IDs |
+| "Add log aggregation" | Structured JSON logging, Loki/Promtail setup, log-based alerting, retention config |
 
 ## Step 2: Implement
 
@@ -308,7 +308,161 @@ public class OrderService {
 </dependency>
 ```
 
-### 2f. SLI / SLO Definition
+### 2f. Log Aggregation with Loki + Promtail
+
+For Kubernetes deployments, ship logs to Grafana Loki for centralized search and correlation with metrics:
+
+**Log shipping pipeline**: `App → stdout (JSON) → Promtail (DaemonSet) → Loki → Grafana`
+
+**Promtail DaemonSet config** (K8s):
+```yaml
+# promtail-config.yaml — ConfigMap mounted to Promtail pods
+server:
+  http_listen_port: 9080
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: spring-boot-apps
+    kubernetes_sd_configs:
+      - role: pod
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            message: message
+            traceId: traceId
+            spanId: spanId
+            logger: logger_name
+            application: application
+      - labels:
+          application:
+          level:
+          traceId:
+      - match:
+          selector: '{level="ERROR"}'
+          stages:
+            - metrics:
+                log_errors_total:
+                  type: Counter
+                  description: "Total error log lines"
+                  config:
+                    match_all: true
+                    action: inc
+```
+
+**Loki alerting rules** (log-based):
+```yaml
+# loki-alerts.yaml
+groups:
+  - name: spring-boot-log-alerts
+    rules:
+      - alert: HighErrorLogRate
+        expr: |
+          rate({level="ERROR"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.application }} logging > 10 ERROR/min"
+          runbook: "https://wiki.internal/runbooks/high-error-log-rate"
+
+      - alert: StackTraceDetected
+        expr: |
+          {level="ERROR"} |= "Exception"
+        labels:
+          severity: warning
+        annotations:
+          summary: "Exception detected in {{ $labels.application }}: {{ $labels.message }}"
+
+      - alert: NoLogsFromService
+        expr: |
+          absent_over_time({application="order-service"}[10m])
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Order service has produced no logs for 10 minutes"
+```
+
+**Loki datasource in Grafana** (`grafana-datasources.yaml`):
+```yaml
+apiVersion: 1
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      maxLines: 1000
+```
+
+**Correlating metrics and logs in Grafana**: When viewing a metric panel, split a Loki query by `traceId` to see all log lines for a specific request. Loki labels derived from JSON fields (`traceId`, `application`, `level`) enable fast filtering without full-text scan.
+
+### 2g. Log Retention and Sampling
+
+For high-volume services, control log volume:
+
+```yaml
+# Loki config — retention and limits
+limits_config:
+  retention_period: 744h       # 31 days
+  max_entries_limit_per_query: 5000
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h  # reject logs older than 7 days
+
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 744h
+```
+
+**Application-level sampling for non-critical logs:**
+```yaml
+# logback-spring.xml — async appender with queue
+<appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>512</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+    <neverBlock>true</neverBlock>
+    <appender-ref ref="CONSOLE" />
+</appender>
+<root level="INFO">
+    <appender-ref ref="ASYNC" />
+</root>
+```
+
+Rules:
+- Log at INFO for business events, WARN for recoverable issues, ERROR for actionable failures
+- Never log at DEBUG in production — use `logging.level.com.company` in `application-prod.yml` to override specific packages
+- Ship only `level`, `message`, `traceId`, `spanId`, `application`, and key business IDs as Loki labels — everything else stays in the log line
+- Too many labels = high cardinality = slow Loki. Keep label count under 10 per stream
+
+### 2h. Log-Based Alerting Rules
+
+Beyond Loki, combine log patterns with Prometheus metrics for composite alerts:
+
+| Scenario | Metric check | Log check | Severity |
+|----------|------------|-----------|----------|
+| DB connection failure | `hikaricp_connections_active == 0` | `"Cannot acquire connection"` | Critical |
+| Auth failure spike | `http_requests_total{status="401"} > 50/5m` | `"Invalid token"` or `"Access denied"` | Warning |
+| Downstream timeout | `downstream_calls_seconds_count{status="timeout"} > 10/5m` | `"SocketTimeoutException"` | Warning |
+| Schema registry failure | `kafka_producer_errors_total > 0` | `"Schema not found"` or `"Incompatible schema"` | Warning |
+| OOM approaching | `jvm_memory_used_bytes / jvm_memory_max_bytes > 0.9` | `"OutOfMemoryError"` or `"GC overhead"` | Critical |
+
+**Composite alert example (Prometheus + Loki in Alertmanager):**
+```yaml
+- alert: DatabaseConnectionFailure
+  expr: |
+    rate(hikaricp_connections_timeout_total[5m]) > 0
+  for: 2m
+  labels:
+    severity: critical
+  annotations:
+    summary: "DB connection timeouts detected"
+    description: "Check Loki: {application=\"{{ $labels.application }}\"} |= \"connection\""
+```
+
+### 2j. SLI / SLO Definition
 
 Define SLIs as a config file: `.sli/order-service.yaml`
 
@@ -341,7 +495,7 @@ error_budget:
     burn_rate_slow: 3     # alerts within 6 hours
 ```
 
-### 2g. Grafana Dashboard
+### 2k. Grafana Dashboard
 
 Generate a JSON dashboard file at `.dashboards/{service}-dashboard.json` with these panels:
 
@@ -367,7 +521,7 @@ Generate a JSON dashboard file at `.dashboards/{service}-dashboard.json` with th
 **Row 5: Business Metrics**
 - Custom panels based on the service's business counters and gauges
 
-### 2h. Prometheus Alerting Rules
+### 2l. Prometheus Alerting Rules
 
 Generate `.alerts/{service}-alerts.yml`:
 
@@ -430,7 +584,7 @@ groups:
           summary: "Messages failing to deliver"
 ```
 
-### 2i. OpenTelemetry (Alternative to Prometheus-only)
+### 2m. OpenTelemetry (Alternative to Prometheus-only)
 
 For organizations standardizing on OTel:
 
@@ -460,7 +614,7 @@ management:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
 ```
 
-### 2j. Database Observability
+### 2n. Database Observability
 
 Instrument database queries when the project has access to connection pool metrics:
 
@@ -517,6 +671,11 @@ curl http://localhost:8080/api/v1/orders
 - [ ] Liveness and readiness probe groups configured
 - [ ] Structured JSON logging configured (logstash-logback-encoder)
 - [ ] TraceId and SpanId propagated in MDC
+- [ ] Log aggregation pipeline set up (Promtail → Loki → Grafana)
+- [ ] Log retention and sampling configured
+- [ ] Log-based alerting rules defined
+- [ ] Loki datasource configured in Grafana
+- [ ] Async log appender configured for high-volume services
 - [ ] SLI/SLO definitions file created
 - [ ] Grafana dashboard JSON generated
 - [ ] Alerting rules defined with severity levels and runbook links

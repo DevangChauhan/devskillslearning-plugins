@@ -252,6 +252,138 @@ If applicable, recommend:
 - Adding a test case for the specific scenario that caused the failure
 - Updating documentation if the fix reveals a non-obvious constraint
 
+## Step 5: Post-Incident Response (P0/P1 Only)
+
+After a P0 or P1 incident is resolved, run a post-incident review to prevent recurrence. Skip this for P2/P3 issues.
+
+### 5a. Timeline Reconstruction
+
+Rebuild the incident timeline from deploy logs, monitoring data, and chat history:
+
+```markdown
+| Time (UTC) | Event | Source |
+|------------|-------|--------|
+| 14:32 | Deploy v1.8.3 to production | CI/CD logs |
+| 14:35 | Error rate begins climbing | Prometheus |
+| 14:38 | PagerDuty alert fires | Alert manager |
+| 14:41 | Rollback initiated | kubectl logs |
+| 14:43 | Error rate normalizes | Prometheus |
+```
+
+- **Detection time**: When did the monitoring first detect it?
+- **Response time**: When did a human first acknowledge it?
+- **Mitigation time**: When was the bleeding stopped?
+- **Resolution time**: When was the root cause fixed?
+- **Total impact**: Detection → resolution duration
+
+### 5b. Five Whys Analysis
+
+Start with the symptom and ask "why?" five times until you reach the systemic root cause:
+
+```
+Symptom: Order checkout returned 500 errors for 8 minutes
+
+Why #1: The payment service returned connection refused
+Why #2: Payment service was restarting due to OOMKilled
+Why #3: Memory spiked because a batch job loaded all pending orders
+Why #4: The batch job had no pagination and no memory limit
+Why #5: The batch job was written without code review and had no load test
+
+Root cause: No code review gate for batch jobs, no performance test requirement for data-loading code.
+```
+
+Rules:
+- Each "why" must be a verifiable fact, not speculation
+- Stop when you reach a **process** or **system** failure (not "the developer made a mistake")
+- The final answer should be something you can fix with a process change, automation, or architectural guard
+
+### 5c. Blameless Postmortem Template
+
+```markdown
+# Incident Postmortem: [Title]
+
+**Date**: YYYY-MM-DD
+**Severity**: P0 / P1
+**Duration**: Start → End (X minutes)
+**Authors**: [Names]
+**Status**: Draft / Reviewed / Published
+
+## Summary
+One paragraph: what happened, impact, root cause.
+
+## Timeline
+[Table from 5a]
+
+## Impact
+- Users affected: [count or "all"]
+- Error budget consumed: [X minutes out of Y allowed]
+- Revenue impact (if known): [$X]
+
+## Root Cause
+[Five Whys conclusion — the systemic cause, not the trigger]
+
+## What Went Well
+- [Detection was fast — monitoring caught it in 3 minutes]
+- [Rollback was clean — no lasting data corruption]
+
+## What Went Wrong
+- [The deploy pipeline doesn't run integration tests]
+- [No memory limit was set on the batch job pod]
+
+## Action Items
+| # | Action | Owner | Due | Priority |
+|---|--------|-------|-----|----------|
+| 1 | Add resource limits to all batch job pods | [Name] | YYYY-MM-DD | P0 |
+| 2 | Require code review for all batch jobs | [Name] | YYYY-MM-DD | P1 |
+| 3 | Add memory pressure alert for batch namespace | [Name] | YYYY-MM-DD | P1 |
+| 4 | Create runbook for "payment service OOM" | [Name] | YYYY-MM-DD | P2 |
+
+## Lessons Learned
+[Key takeaways the team should remember]
+```
+
+### 5d. Action Item Standards
+
+Every action item must be:
+- **Specific**: "Add memory limits to order-batch deployment" not "Fix memory issue"
+- **Assigned**: One owner per item — no shared ownership
+- **Dated**: Realistic due date, not "ASAP"
+- **Prioritized**: P0 (do before next deploy), P1 (this sprint), P2 (backlog)
+- **Verified**: The action item must demonstrably prevent this class of incident — "add a test" is better than "be more careful"
+
+### 5e. Runbook Creation
+
+If the incident uncovered a scenario with no existing runbook, create one:
+
+```markdown
+# Runbook: [Failure Scenario]
+
+## Alert
+- **Alert name**: [e.g., PaymentServiceDown]
+- **Severity**: [critical / warning]
+- **Dashboard**: [link to relevant Grafana dashboard]
+
+## Symptoms
+- [What the on-call engineer will see: error messages, metric changes, user reports]
+
+## Triage (first 3 minutes)
+1. Check: `kubectl get pods -l app=payment-service`
+2. Check: Recent deploys `kubectl rollout history deployment/payment-service`
+3. Check: Downstream dependencies via `/actuator/health/readiness`
+
+## Mitigation
+- **Immediate (stop the bleeding)**: [Rollback / scale up / toggle flag / restart]
+- **If that doesn't work**: [Escalate to payment team, check database health]
+
+## Resolution
+- [How to actually fix the root cause permanently]
+
+## Post-Resolution
+- [Any cleanup needed: drain queues, replay events, reconcile data]
+```
+
+Store runbooks in `docs/runbooks/` in the project repository — version-controlled, discoverable, and kept up to date.
+
 ## Quick Reference: Common Spring Boot Issues
 
 ```sh
@@ -289,6 +421,11 @@ mvn test -Dfailsafe.rerunFailingTestsCount=2
 - [ ] Build/compilation passes after fix
 - [ ] Tests pass after fix
 - [ ] Prevention recommendation given (if applicable)
+- [ ] (P0/P1) Incident timeline reconstructed
+- [ ] (P0/P1) Five Whys analysis completed — reached systemic root cause
+- [ ] (P0/P1) Blameless postmortem drafted with action items
+- [ ] (P0/P1) Action items are specific, assigned, dated, and prioritized
+- [ ] (P0/P1) Runbook created or updated for this failure scenario
 
 ## Next Step
 After the issue is diagnosed and fixed, use `/devskillslearning-pipeline:write-tests` to add regression tests preventing recurrence, then `/devskillslearning-pipeline:code-review` to verify the fix.
