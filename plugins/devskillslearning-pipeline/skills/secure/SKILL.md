@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:secure
-description: Harden Spring Boot security — OAuth2/JWT, Keycloak, method-level security, CORS, API keys, rate limiting, audit logging. Detects existing security config. Use before production deploy.
+description: [Harden] Harden Spring Boot security — OAuth2/JWT, Keycloak, method-level security, CORS, API keys, rate limiting, audit logging. Detects existing security config. Use before production deploy.
 type: skill
 ---
 

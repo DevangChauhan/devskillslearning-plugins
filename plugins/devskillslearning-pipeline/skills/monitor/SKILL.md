@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:monitor
-description: Set up production observability — Micrometer, Prometheus/Grafana, distributed tracing, SLIs/SLOs, alerting rules, health indicators. Use when: add metrics, configure tracing, define SLOs, generate dashboards.
+description: [Ship] Set up production observability — Micrometer, Prometheus/Grafana, distributed tracing, SLIs/SLOs, alerting rules, health indicators. Use when: add metrics, configure tracing, define SLOs, generate dashboards.
 type: skill
 ---
 

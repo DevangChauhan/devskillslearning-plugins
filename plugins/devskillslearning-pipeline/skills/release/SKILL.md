@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:release
-description: Manage releases — semantic versioning, changelogs, release notes, tagging, CI release automation. Follows conventional commits and Keep a Changelog. Use when: cut a release, bump version, generate changelog.
+description: [Ship] Manage releases — semantic versioning, changelogs, release notes, tagging, CI release automation. Follows conventional commits and Keep a Changelog. Use when: cut a release, bump version, generate changelog.
 type: skill
 ---
 

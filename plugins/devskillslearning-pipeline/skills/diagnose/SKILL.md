@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:diagnose
-description: Diagnose and fix build failures, test failures, startup errors, and runtime issues in Spring Boot. Covers K8s, CI/CD, threading, and memory problems. Use when: share a stack trace, build log, or error message.
+description: [Harden] Diagnose and fix build failures, test failures, startup errors, and runtime issues in Spring Boot. Covers K8s, CI/CD, threading, and memory problems. Use when: share a stack trace, build log, or error message.
 type: skill
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:api-integrate
-description: Consume external REST/gRPC/GraphQL APIs in Spring Boot — OpenAPI client generation, RestClient/WebClient setup, error mapping, caching, webhook receivers. Use when: call external API, generate client from OpenAPI, set up webhooks.
+description: [Build] Consume external REST/gRPC/GraphQL APIs in Spring Boot — OpenAPI client generation, RestClient/WebClient setup, error mapping, caching, webhook receivers. Use when: call external API, generate client from OpenAPI, set up webhooks.
 type: skill
 ---
 

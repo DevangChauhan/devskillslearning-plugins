@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:resilience
-description: Harden Spring Boot services with Resilience4j — circuit breaker, retry, timeout, bulkhead, rate limiter. Detects existing resilience config. Use when: add circuit breaker, add retry, isolate slow downstream calls.
+description: [Harden] Harden Spring Boot services with Resilience4j — circuit breaker, retry, timeout, bulkhead, rate limiter. Detects existing resilience config. Use when: add circuit breaker, add retry, isolate slow downstream calls.
 type: skill
 ---
 

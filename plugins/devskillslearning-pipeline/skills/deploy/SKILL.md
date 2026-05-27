@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:deploy
-description: Containerize, deploy, or set up CI/CD for a Spring Boot app. Generates Dockerfiles, K8s manifests, Helm charts, and GitHub Actions pipelines. Use when: Dockerize, deploy to K8s, create CI/CD pipeline.
+description: [Ship] Containerize, deploy, or set up CI/CD for a Spring Boot app. Generates Dockerfiles, K8s manifests, Helm charts, and GitHub Actions pipelines. Use when: Dockerize, deploy to K8s, create CI/CD pipeline.
 type: skill
 ---
 

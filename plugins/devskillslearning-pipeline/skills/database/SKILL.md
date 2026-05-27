@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:database
-description: Design and optimize DB schemas, migrations, queries, and indexes for Spring Boot. Covers no-downtime migrations, read replicas, and connection pooling. Use when: design schema, add migration, optimize slow query, review indexes.
+description: [Plan] Design and optimize DB schemas, migrations, queries, and indexes for Spring Boot. Covers no-downtime migrations, read replicas, and connection pooling. Use when: design schema, add migration, optimize slow query, review indexes.
 type: skill
 ---
 

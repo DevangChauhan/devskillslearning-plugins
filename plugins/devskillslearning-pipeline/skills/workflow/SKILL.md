@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:workflow
-description: Guided entry point for the DevSkillsLearning Pipeline. Use when unsure which skill to invoke, or when the user says "help me build", "I need to add a feature", "something's broken", or "where do I start?" Routes to the right skill chain.
+description: [Entry] Guided entry point for the DevSkillsLearning Pipeline. Use when unsure which skill to invoke, or when the user says "help me build", "I need to add a feature", "something's broken", or "where do I start?" Routes to the right skill chain.
 type: skill
 ---
 

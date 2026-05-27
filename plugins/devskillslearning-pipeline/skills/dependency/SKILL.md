@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:dependency
-description: Manage dependencies and scan for CVEs — OWASP check, version catalogs, BOMs, transitive conflict resolution, Renovate/Dependabot setup. Use when: scan for CVEs, audit deps, set up auto-updates, resolve version conflicts.
+description: [Harden] Manage dependencies and scan for CVEs — OWASP check, version catalogs, BOMs, transitive conflict resolution, Renovate/Dependabot setup. Use when: scan for CVEs, audit deps, set up auto-updates, resolve version conflicts.
 type: skill
 ---
 

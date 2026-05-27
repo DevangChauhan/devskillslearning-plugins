@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:github
-description: Manage GitHub projects and review PRs via MCP — create epics/stories/tickets, search issues, link PRs to tickets, inline review comments. Requires GitHub MCP setup. Use when: create tickets, review PR by URL, manage project board.
+description: [Plan] Manage GitHub projects and review PRs via MCP — create epics/stories/tickets, search issues, link PRs to tickets, inline review comments. Requires GitHub MCP setup. Use when: create tickets, review PR by URL, manage project board.
 type: skill
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:design-api
-description: Design API contracts before implementation — OpenAPI, AsyncAPI, gRPC, GraphQL. Spec becomes source of truth for write-code. Use when: design API, create OpenAPI spec, define AsyncAPI channels, design gRPC schema.
+description: [Plan] Design API contracts before implementation — OpenAPI, AsyncAPI, gRPC, GraphQL. Spec becomes source of truth for write-code. Use when: design API, create OpenAPI spec, define AsyncAPI channels, design gRPC schema.
 type: skill
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:write-code
-description: Implement features in Spring Boot — controller, service, repository, entity, DTO, mapper, migrations, event handlers. Auto-detects architecture and conventions. Use when: add endpoint, implement feature, build CRUD API.
+description: [Build] Implement features in Spring Boot — controller, service, repository, entity, DTO, mapper, migrations, event handlers. Auto-detects architecture and conventions. Use when: add endpoint, implement feature, build CRUD API.
 type: skill
 ---
 

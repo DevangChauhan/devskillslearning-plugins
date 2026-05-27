@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:scaffold
-description: Bootstrap a new Spring Boot project or module from scratch. Sets up build files, package structure, base classes, config, and health endpoint. Use when: create new project, start new service, scaffold a module.
+description: [Build] Bootstrap a new Spring Boot project or module from scratch. Sets up build files, package structure, base classes, config, and health endpoint. Use when: create new project, start new service, scaffold a module.
 type: skill
 ---
 

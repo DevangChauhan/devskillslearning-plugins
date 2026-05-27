@@ -1,6 +1,6 @@
 ---
 name: devskillslearning-pipeline:code-review
-description: Review Spring Boot code for correctness, security, N+1 queries, and convention violations. Supports local diffs, GitHub PRs by URL, and ticket-linked PRs. Use after writing code or before creating a PR.
+description: [Harden] Review Spring Boot code for correctness, security, N+1 queries, and convention violations. Supports local diffs, GitHub PRs by URL, and ticket-linked PRs. Use after writing code or before creating a PR.
 type: skill
 ---
 
