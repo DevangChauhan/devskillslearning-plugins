@@ -30,11 +30,20 @@ You are an expert Java/Spring Boot developer performing safe refactoring. Your g
 Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
 
 1. Read the file(s) the user wants to refactor
-2. Run tests on the affected module to establish baseline:
+2. **Discover dependent modules** — find which other modules depend on the module being changed:
    ```sh
-   mvn test -pl :module-name   # or ./gradlew :module-name:test
+   # Maven: check which modules depend on your module
+   mvn dependency:tree -pl :module-name -Dverbose | grep "from :"
+   # Gradle: check project dependencies in settings.gradle and build files
    ```
-3. Note all dependencies and callers of the code being refactored
+3. Run tests on the affected module AND all transitive dependents to establish baseline:
+   ```sh
+   mvn test -pl :module-name -am   # -am = also-make (build dependents too)
+   # or
+   ./gradlew :module-name:test :dependent-module:test
+   ```
+4. **Check baseline is clean** — if tests already fail before refactoring, warn the user and record known failures. Do not proceed with a broken baseline.
+5. Note all dependencies and callers of the code being refactored
 
 ## Step 1: Choose Refactoring
 
@@ -169,17 +178,143 @@ When packages don't match the project's convention.
 4. Update imports in all files that reference moved classes
 5. Run tests
 
+### 1g. Migrate Field Injection to Constructor Injection
+
+When `@Autowired` is used on fields — the project convention is constructor injection.
+
+**Process:**
+1. Scan for `@Autowired` on fields (or fields without `final` that should be constructor-injected)
+2. Add `private final` to each injected field
+3. Add `@RequiredArgsConstructor` (Lombok) or write explicit constructor
+4. Remove `@Autowired` annotations
+5. Check for circular dependencies — constructor injection reveals these at startup
+6. If circular dependency found: break with `@Lazy` on one side, or extract a third collaborator
+7. Run tests
+
+**Example:**
+```java
+// BEFORE
+@Service
+public class OrderService {
+    @Autowired
+    private OrderRepository repository;
+    @Autowired
+    private PaymentClient paymentClient;
+}
+
+// AFTER
+@Service
+@RequiredArgsConstructor
+public class OrderService {
+    private final OrderRepository repository;
+    private final PaymentClient paymentClient;
+}
+```
+
+### 1h. Replace Deprecated API
+
+When the project uses APIs that are deprecated or removed in the detected Spring Boot / Java version.
+
+**Systematic replacement table:**
+
+| Deprecated | Replacement | Since |
+|-----------|-------------|-------|
+| `RestTemplate` | `RestClient` (sync) or `WebClient` (reactive) | Boot 3.2+ |
+| `@Autowired` on field | Constructor injection + `@RequiredArgsConstructor` | Always |
+| `java.util.Date` / `Calendar` | `java.time.Instant` / `LocalDateTime` | Java 8+ |
+| `javax.*` imports | `jakarta.*` imports | Boot 3.x |
+| `@RequestMapping(method = RequestMethod.GET)` | `@GetMapping` (or `@PostMapping`, `@PutMapping`, etc.) | Spring 4.3+ |
+| `WebMvcConfigurerAdapter` | `WebMvcConfigurer` (interface, not abstract class) | Spring 5 / Boot 2.x |
+| `MockitoAnnotations.initMocks(this)` | `@ExtendWith(MockitoExtension.class)` + `@Mock` | Mockito 3+ |
+| `@RunWith(MockitoJUnitRunner.class)` | `@ExtendWith(MockitoExtension.class)` | JUnit 5 |
+| `@RunWith(SpringRunner.class)` | `@ExtendWith(SpringExtension.class)` or `@SpringBootTest` | JUnit 5 |
+| `expected` attribute of `@Test` | `assertThrows()` | JUnit 5 |
+
+**Process:**
+1. Identify deprecated APIs in the target files
+2. Replace one API at a time (one commit per type)
+3. Run tests after each replacement
+4. Update imports — remove old, add new
+
+### 1i. Extract Configuration into @ConfigurationProperties
+
+When `@Value("${...}")` is scattered across the codebase. See `docs/shared/patterns/configuration-props.md` for full conventions.
+
+**Process:**
+1. Find all `@Value` annotations referencing the same prefix
+2. Create a `@ConfigurationProperties` record with matching fields
+3. Add `@Validated` and validation annotations
+4. Replace each `@Value` injection with the typed config record injection
+5. Ensure `@ConfigurationPropertiesScan` is on the main class
+6. Run tests
+
+**Example:**
+```java
+// BEFORE — scattered @Value
+@Service
+public class PaymentService {
+    @Value("${payment.retry.max-attempts:3}")
+    private int maxAttempts;
+    @Value("${payment.retry.backoff:2s}")
+    private Duration backoff;
+    @Value("${payment.timeout:30s}")
+    private Duration timeout;
+}
+
+// AFTER — typed config record
+@ConfigurationProperties(prefix = "payment")
+@Validated
+public record PaymentConfig(
+    @Positive int retryMaxAttempts,
+    Duration retryBackoff,
+    Duration timeout
+) {}
+```
+
+### 1j. Remove Dead Code & Unused Dependencies
+
+When the project has accumulated unused classes, methods, or dependencies. The test safety net makes this safe.
+
+**Process — Dead code:**
+1. Identify unused private methods (compiler warnings, or IDE "unused" inspection)
+2. Identify classes with no references (search for class name across codebase)
+3. Remove each dead element individually, run tests after each removal
+4. If tests pass, the code was truly dead
+
+**Process — Unused dependencies:**
+```sh
+# Maven
+mvn dependency:analyze -pl :module-name
+# Reports: "Used undeclared" (add to POM) and "Unused declared" (remove from POM)
+
+# Gradle
+./gradlew :module-name:dependencies --configuration compileClasspath | grep -E "FAILED|unused"
+```
+
+Rules:
+- Do NOT remove dependencies flagged as "used undeclared" without adding explicit declarations first
+- Spring Boot starter dependencies may appear unused (they bring transitive deps) — be conservative
+- Test-scoped dependencies may appear unused by `dependency:analyze` — verify manually
+- Always run full build after dependency removal: `mvn clean verify` or `./gradlew build`
+
 ## Step 2: Verify
 
 After refactoring:
 
-1. **Compile**: `mvn compile -pl :module-name` (or `./gradlew :module-name:compileJava`)
-2. **Tests**: `mvn test -pl :module-name` (or `./gradlew :module-name:test`)
+1. **Compile**: `mvn compile -pl :module-name -am` (or `./gradlew :module-name:compileJava`)
+2. **Tests — module + dependents**:
+   ```sh
+   mvn test -pl :module-name -am   # -am = also-make — tests all transitive consumers
+   # or for Gradle — explicitly list dependent modules
+   ./gradlew :module-name:test :dependent-a:test :dependent-b:test
+   ```
 3. **Full build**: `mvn clean verify` (or `./gradlew build`)
 4. **Format**: `mvn spotless:apply` (or `./gradlew spotlessApply`)
 5. Compare test results before/after — same count, same pass rate
 
 If any test fails: analyze the failure, fix the refactoring mistake, re-run. Do NOT change test logic — the tests are the safety net.
+
+**Multi-module note**: Always use `-am` (also-make) in Maven to build and test modules that depend on the refactored module. For Gradle, explicitly list dependent modules. A refactoring in `:common` that passes `:common:test` but breaks `:order-service:test` is a failed refactoring.
 
 ## Step 3: Summarize
 

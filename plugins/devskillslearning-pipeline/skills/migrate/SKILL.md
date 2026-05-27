@@ -24,6 +24,46 @@ You automate Java/Spring Boot version upgrades with safety. Every migration is v
 
 **Safety guarantee**: I run the full build BEFORE and AFTER. If anything breaks, I fix the migration issues — never leave a broken build.
 
+## Step -1: Git Safety Net
+
+Before any migration, create a safety net:
+
+1. **Create a dedicated branch**:
+   ```sh
+   git checkout -b migrate/spring-boot-3.3
+   ```
+
+2. **Capture baseline test results**:
+   ```sh
+   mvn clean verify 2>&1 | tee baseline-build.log
+   # Record test count:
+   grep "Tests run:" baseline-build.log | tail -1
+   ```
+
+3. **Commit after each logical step** (not one giant commit):
+   ```sh
+   git add -A && git commit -m "chore: bump Spring Boot parent version"
+   git add -A && git commit -m "chore: javax → jakarta namespace migration"
+   git add -A && git commit -m "chore: migrate Spring Security to Lambda DSL"
+   git add -A && git commit -m "chore: update deprecated APIs and dependencies"
+   ```
+
+4. **Compare test counts after migration**:
+   ```sh
+   mvn clean verify 2>&1 | tee post-migration-build.log
+   diff <(grep "Tests run:" baseline-build.log) <(grep "Tests run:" post-migration-build.log)
+   # Test count must match — fewer tests means something broke silently
+   ```
+
+5. **Rollback path** — if migration fails partway through:
+   ```sh
+   git stash        # save partial work for inspection
+   git checkout main  # back to known-good state
+   # OR: git log --oneline to find the last good commit, then git reset --hard <sha>
+   ```
+
+**Never proceed without a clean baseline.** If tests already fail before migration, fix them first or record them as known failures to exclude from comparison.
+
 ## Step 0: Assess Current State
 
 Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
@@ -48,6 +88,22 @@ Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot vers
 | Java 17 → 21 | Language upgrade | Medium |
 | Java 11 → 17 | Language + API upgrade | Medium |
 | Spring Cloud 2022.x → 2023.x | Cloud upgrade | Medium |
+| Gradle 7.x → 8.x | Build system | Medium |
+| JUnit 4 → 5 | Test framework | Medium |
+
+### Spring Boot 3.x Per-Version Breaking Changes
+
+Each minor version has specific breaking changes beyond the 2.x→3.0 jump. Reference this when upgrading within 3.x:
+
+| Version | Key Breaking Changes |
+|---------|---------------------|
+| **3.0** | javax→jakarta, Spring Security Lambda DSL, Hibernate 6.x, `spring.factories`→`AutoConfiguration.imports`, `@ConstructorBinding` auto-detected, `WebSecurityConfigurerAdapter` removed |
+| **3.1** | `@AutoConfiguration(before/after)` replaces `@AutoConfigureAfter/Before`, Docker Compose service connections, `management.observations.annotations` package restructure |
+| **3.2** | `RestClient` introduced (prefer over RestTemplate), virtual threads support (`spring.threads.virtual.enabled`), `@SpringBootTest(useMainMethod=ALWAYS)`, SSL bundle changes |
+| **3.3** | Classpath scanning optimized (may miss @Configuration outside declared packages), `management.defaults.metrics.export.*` property structure flattened, `ServiceConnection` for Testcontainers |
+| **3.4** | Check release notes — this version is recent |
+
+When migrating across multiple minor versions (e.g., 3.1→3.3), apply changes for all intermediate versions cumulatively.
 
 ## Step 2: Spring Boot 2.x → 3.x Migration (Major)
 
@@ -176,7 +232,107 @@ http.authorizeHttpRequests(auth -> auth
 - `@TypeDef` and `@Type` removed for user types — use `@JdbcTypeCode` or `@JavaType`
 - `hibernate.id.new_generator_mappings` removed — always uses pooled optimizers
 
-## Step 3: Java Version Upgrades
+## Step 3: Test Framework Migration — JUnit 4 → 5
+
+One of the most common and tedious Java migrations. Every annotation, rule, and assertion style changes.
+
+### Annotation Mapping
+
+| JUnit 4 | JUnit 5 |
+|---------|---------|
+| `@Test` | `@Test` (same import — `org.junit.jupiter.api.Test`) |
+| `@Before` | `@BeforeEach` |
+| `@BeforeClass` | `@BeforeAll` |
+| `@After` | `@AfterEach` |
+| `@AfterClass` | `@AfterAll` |
+| `@Ignore` | `@Disabled` |
+| `@Test(expected = XxxException.class)` | `assertThrows(XxxException.class, () -> { ... })` |
+| `@Test(timeout = 500)` | `assertTimeout(Duration.ofMillis(500), () -> { ... })` |
+| `@RunWith(SpringRunner.class)` | `@ExtendWith(SpringExtension.class)` (or `@SpringBootTest` which already includes it) |
+| `@RunWith(MockitoJUnitRunner.class)` | `@ExtendWith(MockitoExtension.class)` |
+| `@RunWith(Parameterized.class)` | `@ParameterizedTest` + `@ValueSource` / `@CsvSource` / `@MethodSource` |
+| `@Category(SlowTests.class)` | `@Tag("slow")` |
+| `@FixMethodOrder(MethodSorters.NAME_ASCENDING)` | `@TestMethodOrder(MethodOrderer.MethodName.class)` |
+
+### Rule → Extension Conversion
+
+| JUnit 4 Rule | JUnit 5 Replacement |
+|-------------|-------------------|
+| `@Rule public ExpectedException thrown = ExpectedException.none()` | `assertThrows(XxxException.class, () -> { ... })` |
+| `@Rule public TemporaryFolder folder = new TemporaryFolder()` | `@TempDir Path tempDir` |
+| `@ClassRule` | `@RegisterExtension` (static field) |
+| Custom `TestRule` | Implement `BeforeEachCallback` / `AfterEachCallback` |
+
+### Dependency Changes
+
+**Maven — remove:**
+```xml
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+**Maven — add:**
+```xml
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+**Surefire plugin** — ensure JUnit 5 engine is present:
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <!-- 3.x+ includes JUnit 5 support by default -->
+</plugin>
+```
+
+**Gradle:**
+```groovy
+testImplementation 'org.junit.jupiter:junit-jupiter'
+// Remove: testImplementation 'junit:junit:4.13.2'
+```
+
+### Parameterized Test Conversion
+
+```java
+// JUnit 4
+@RunWith(Parameterized.class)
+public class CalculatorTest {
+    @Parameter public int a;
+    @Parameter(1) public int b;
+    @Parameter(2) public int expected;
+
+    @Parameters(name = "{index}: {0} + {1} = {2}")
+    public static Iterable<Object[]> data() {
+        return List.of(new Object[][]{{1, 2, 3}, {4, 5, 9}});
+    }
+
+    @Test public void testAdd() { assertEquals(expected, calculator.add(a, b)); }
+}
+
+// JUnit 5
+class CalculatorTest {
+    @ParameterizedTest
+    @CsvSource({"1, 2, 3", "4, 5, 9"})
+    void shouldAdd(int a, int b, int expected) {
+        assertEquals(expected, calculator.add(a, b));
+    }
+}
+```
+
+### Migration Strategy
+1. Add `junit-jupiter` dependency alongside `junit` (Vintage engine runs both)
+2. Migrate one test class at a time — run tests after each
+3. Once all tests use JUnit 5, remove `junit:junit` dependency
+4. Run full build to confirm no Vintage engine dependencies remain
+
+## Step 4: Java Version Upgrades
 
 ### Java 11 → 17
 - Enable preview features: `--enable-preview` for pattern matching, records, sealed classes
@@ -187,14 +343,65 @@ http.authorizeHttpRequests(auth -> auth
 - Switch expressions: `return switch(status) { case PENDING -> "Pending"; ... };`
 
 ### Java 17 → 21
-- Virtual threads: `Executors.newVirtualThreadPerTaskExecutor()` (preview in 21, stable in 21+)
-- Record patterns (preview): `if (point instanceof Point(int x, int y))`
+
+- Record patterns: `if (point instanceof Point(int x, int y))`
 - Pattern matching for switch: `switch(obj) { case String s -> ...; case Integer i -> ...; }`
 - Sequenced collections: `list.getFirst()`, `list.getLast()`, `list.reversed()`
 - String templates (preview): `STR."Hello \{name}"`
-- Enable ZGC for containerized apps: `-XX:+UseZGC`
+- Generational ZGC: now the default GC in Java 21 — no `-XX:+UseZGC` needed
 
-## Step 4: Dependency Updates
+### Virtual Threads (Java 21)
+
+Virtual threads are the headline feature of Java 21. They let you handle millions of concurrent tasks with minimal overhead.
+
+**Enable in Spring Boot 3.2+:**
+```yaml
+spring:
+  threads:
+    virtual:
+      enabled: true
+```
+
+This replaces the platform-thread-per-request model with virtual threads on Tomcat/Jetty, `@Async` methods, `RestClient`, and `WebClient`.
+
+**Pinning detection** — virtual threads "pin" to their carrier (platform) thread when inside `synchronized` blocks or native methods, losing the concurrency benefit:
+
+```sh
+# Start with pinning diagnostics
+java -Djdk.tracePinnedThreads=full -jar app.jar
+
+# Watch for "pinned" in the output — each pinned thread blocks a carrier
+```
+
+**Fixes for pinning:**
+```java
+// BEFORE — synchronized blocks pin the virtual thread
+public synchronized Order processOrder(Order order) { ... }
+
+// AFTER — ReentrantLock does not pin
+private final ReentrantLock lock = new ReentrantLock();
+public Order processOrder(Order order) {
+    lock.lock();
+    try { ... } finally { lock.unlock(); }
+}
+```
+
+**Thread pool migration:**
+```java
+// BEFORE — platform thread pool
+private final ExecutorService executor = Executors.newFixedThreadPool(10);
+
+// AFTER — virtual thread executor (unbounded virtual threads, no pool tuning needed)
+private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+```
+
+**Rules:**
+- Do NOT pool virtual threads — create one per task, throw it away. They're cheap.
+- Do NOT use `ThreadLocal` heavily — use `ScopedValue` (preview in 21, stable in 23+) for structured concurrency
+- Do monitor for pinning in critical paths — one pinned virtual thread blocks one carrier
+- `@Async` + virtual threads: set `spring.threads.virtual.enabled=true` and remove `@Async` pool sizing
+
+## Step 5: Dependency Updates
 
 Update common dependencies alongside Spring Boot:
 
@@ -218,7 +425,91 @@ mvn versions:display-dependency-updates
 ./gradlew dependencyUpdates
 ```
 
-## Step 5: Verify Migration
+## Step 6: Gradle Upgrades
+
+### Gradle 7.x → 8.x
+
+| 7.x | 8.x |
+|-----|-----|
+| `compile` / `runtime` configurations | Removed — use `api` / `implementation` / `runtimeOnly` |
+| `buildscript {}` for plugins | `plugins {}` block preferred |
+| `allprojects {}`, `subprojects {}` | Deprecated — use convention plugins or `configureEach` |
+| `gradle-enterprise` plugin | Renamed to `develocity` |
+| `archivesBaseName` | Use `base { archivesName = "..." }` |
+| Java incremental compilation | Improved; previously `UP-TO-DATE` checks could miss changes |
+
+**Wrapper upgrade:**
+```sh
+./gradlew wrapper --gradle-version 8.12
+```
+
+**Kotlin DSL migration** (`build.gradle` → `build.gradle.kts`):
+```groovy
+// build.gradle (Groovy DSL)
+plugins {
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'java'
+}
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+```
+```kotlin
+// build.gradle.kts (Kotlin DSL)
+plugins {
+    id("org.springframework.boot") version "3.3.5"
+    id("io.spring.dependency-management") version "1.1.6"
+    java
+}
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+```
+
+Key syntax changes:
+| Groovy DSL | Kotlin DSL |
+|-----------|-----------|
+| `id 'plugin' version 'x'` | `id("plugin") version "x"` |
+| `implementation 'a:b:c'` | `implementation("a:b:c")` |
+| `task myTask(type: Copy) { ... }` | `tasks.register<Copy>("myTask") { ... }` |
+| `bootJar { mainClass = '...' }` | `tasks.bootJar { mainClass.set("...") }` |
+| Variable: `var = "value"` | `val var by extra("value")` |
+
+### Version Catalog (libs.versions.toml)
+
+Adopt Gradle version catalogs for central dependency management:
+
+**`gradle/libs.versions.toml`:**
+```toml
+[versions]
+spring-boot = "3.3.5"
+mapstruct = "1.5.5.Final"
+
+[libraries]
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+```
+
+**`build.gradle.kts` (using catalog):**
+```kotlin
+plugins {
+    alias(libs.plugins.spring.boot)
+}
+dependencies {
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.mapstruct)
+    annotationProcessor(libs.mapstruct.processor)
+}
+```
+
+## Step 7: Verify Migration
 
 ```sh
 # 1. Compile
@@ -245,7 +536,7 @@ Common compilation errors and fixes:
 | `@ConstructorBinding` not required | Can remove on records in Boot 3.x |
 | `AutoConfiguration.imports` not found | Move `spring.factories` entries |
 
-## Step 6: Post-Migration Cleanup
+## Step 8: Post-Migration Cleanup
 
 - [ ] Remove any unused dependencies that were only needed for the old version
 - [ ] Update `CLAUDE.md` with new version numbers and conventions

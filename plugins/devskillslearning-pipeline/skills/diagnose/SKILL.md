@@ -24,9 +24,56 @@ You are an expert in diagnosing Java/Spring Boot application failures. Use a sys
 
 **I auto-discover**: Build system, Spring Boot version, Java version, module structure, dependencies. No need to provide these.
 
+## Step -1: Stabilize First (Production Incidents)
+
+Before deep debugging a production issue, stop the bleeding first:
+
+| Question | Action |
+|----------|--------|
+| Can you roll back the last deploy? | `kubectl rollout undo deployment/<name>` or `git revert` — do this FIRST |
+| Can you toggle a feature flag? | Turn off the feature causing the issue |
+| Can you scale down traffic? | Route traffic away from the failing instance or reduce rate limits |
+| Can you restart? | `kubectl rollout restart deployment/<name>` — quick fix for memory leaks, deadlocks, thread exhaustion |
+
+Only proceed to diagnosis after the service is stable. A 5-minute rollback is better than a 2-hour debugging session under pressure.
+
 ## Step 0: Gather Information
 
 Follow `docs/shared/step0-discovery.md` to detect build system, Spring Boot version, architecture type, package layout, and all project conventions.
+
+## Step 0.5: Initial Triage
+
+Before diving into classification tables, answer these narrowing questions:
+
+### Decision Tree
+
+```
+Is the service reachable?
+├─ No → Check: kubectl get pods, health endpoint, network connectivity
+│       Is it all instances or just one?
+│       ├─ All → Recent deploy? Config change? Dependency outage?
+│       └─ One  → Node issue, resource starvation, pod eviction
+└─ Yes → Is the error rate elevated?
+         ├─ Yes → Was there a recent deploy? (git log --oneline -5)
+         │        ├─ Yes → Rollback first, debug after
+         │        └─ No  → Check downstream dependencies, DB, message broker
+         └─ No  → Isolated failure — proceed to classification
+```
+
+### Severity Classification
+
+| Severity | Definition | Response |
+|----------|-----------|----------|
+| **P0** | Full outage — service completely down, all users affected | Rollback immediately. Debug after stability is restored. |
+| **P1** | Partial outage — elevated error rate, SLO at risk | 10-minute timeboxes. Escalate if unresolved after 30 min. |
+| **P2** | Degraded — slow responses, intermittent failures, no SLO breach | Standard debugging flow. Fix in current session. |
+| **P3** | Minor — cosmetic, single-user, non-critical path | Queue for next available time. No urgency. |
+
+### Narrowing Questions
+- **Single instance or fleet-wide?** Fleet-wide = config/code/deploy issue. Single instance = node/resource issue.
+- **Correlated with a recent change?** `git log --oneline -10`, check deploy timestamps, config changes.
+- **Correlated with load?** Check if error rate tracks with request rate — suggests capacity or throttling issue.
+- **New or has this ever worked?** If never worked, it's likely config or code. If it broke suddenly, check external dependencies.
 
 ## Step 1: Classify the Failure
 
@@ -107,6 +154,75 @@ mvn dependency:tree -pl :module-name | grep spring-boot-starter-parent
 | Circuit breaker open / fallback triggered | Downstream failing at high rate | Check downstream health, verify thresholds in resilience config. Use `/devskillslearning-pipeline:resilience` to review and tune |
 | High p99 latency under load | Bottleneck in hot code path, GC pauses, DB contention | Profile with JFR/Async Profiler. Use `/devskillslearning-pipeline:perf-test` for systematic profiling |
 | Missing metrics / no alert on failure | Observability not configured | Use `/devskillslearning-pipeline:monitor` to set up Prometheus, Grafana, and alerting rules |
+
+### Kubernetes Deployment Failures
+
+| Symptom | Root Cause | Fix |
+|----------|-----------|-----|
+| `CrashLoopBackOff` | App exits non-zero (config error, missing dependency, port conflict) | `kubectl logs <pod> --previous`, check startup probes |
+| `CrashLoopBackOff` + Exit Code 137 | OOMKilled — container exceeded memory limit | Increase `resources.limits.memory` or fix memory leak |
+| `ImagePullBackOff` | Wrong image tag, registry auth, or network | `kubectl describe pod`, check `imagePullSecrets`, verify tag exists |
+| `Error` (probe failure) | Readiness/liveness probe pointing to wrong path or too short timeout | Check `readinessProbe.httpGet.path`, increase `initialDelaySeconds` |
+| `Pending` indefinitely | Resource quota exceeded, no nodes match selector, PVC not bound | `kubectl describe pod`, check `resources.requests`, node selectors, PVC status |
+| `Evicted` | Node under memory/disk pressure | `kubectl describe pod`, check node conditions, increase resources or add nodes |
+| `CreateContainerConfigError` | ConfigMap or Secret referenced but missing | `kubectl get configmap <name>`, `kubectl get secret <name>` |
+| Pod stuck in `Terminating` | Finalizer blocking, or container ignoring SIGTERM | Check `terminationGracePeriodSeconds`, preStop hooks, finalizer list |
+
+**Diagnostic commands:**
+```sh
+kubectl describe pod <pod-name>           # Events at the bottom — most useful
+kubectl logs <pod-name> --previous        # Logs from crashed container
+kubectl get events --sort-by='.lastTimestamp' | tail -20
+kubectl top pod <pod-name>                # CPU/memory usage
+kubectl describe node <node-name>         # Node conditions (MemoryPressure, DiskPressure)
+```
+
+### CI/CD Pipeline Failures
+
+| Symptom | Common Causes | Fix |
+|----------|--------------|-----|
+| Build passes locally, fails in CI | OS difference (macOS→Linux), JDK version mismatch, locale, timezone, filesystem case sensitivity | Run in CI container locally: `docker run --rm -v $(pwd):/app -w /app maven:3.9-eclipse-temurin-21 mvn verify` |
+| GitHub Actions: runner flakiness | Out of disk space, network timeout, runner version mismatch | Check `df -h` in workflow, add `timeout-minutes`, pin runner version |
+| Cache miss causing slow/failed build | Cache key changed, cache evicted | Check cache key hash, add fallback key, verify `cache-hit` output |
+| Secret not available | Secret not set in repo/env, wrong scope | `gh secret list --repo owner/repo`, check environment vs repo scope |
+| Artifact publish failure | Registry auth expired, version already exists, network | Check `~/.m2/settings.xml`, registry token expiry, use `--batch-mode` |
+| Matrix build: one job fails | Platform-specific issue (ARM vs x86, Windows path separator) | Isolate the failing matrix axis, test locally on that platform |
+| Out of memory during build | Maven/Gradle JVM heap too small | Set `MAVEN_OPTS: -Xmx2g` or `GRADLE_OPTS: -Xmx2g` in CI config |
+
+**"Passes locally, fails in CI" systematic checklist:**
+1. Same JDK version? `java -version` vs CI's `setup-java` version
+2. Same OS? `uname -a` — macOS is case-insensitive by default, Linux is not
+3. Same timezone? CI often defaults to UTC — if tests use `LocalDate.now()`, they may differ
+4. Same locale? `locale` — string formatting, collation, and `String.toUpperCase()` vary
+5. `.gitattributes` line endings? `* text=auto` avoids CRLF vs LF issues
+6. Environment variables set locally but not in CI? Check `application.yml` placeholder defaults
+
+### Concurrency & Threading Issues
+
+| Symptom | Root Cause | Fix |
+|----------|-----------|-----|
+| Deadlock — threads stuck in BLOCKED | Two threads each hold a lock the other needs | Capture thread dump: `jstack <pid>`. Look for "waiting to lock" chains. Break the cycle with consistent lock ordering or `ReentrantLock.tryLock(timeout)`. |
+| `RejectedExecutionException` | Thread pool queue full — all threads busy, queue capacity exhausted | Increase pool size + queue capacity, or add backpressure (caller-runs). Check `@Async` executor config. |
+| `@Async` tasks never execute | `@Async` on self-invocation (same class) — AOP proxy bypassed | Move `@Async` method to separate bean, or inject self proxy |
+| `@Async` tasks silently fail | Uncaught exception in async method — swallowed by `AsyncUncaughtExceptionHandler` | Configure custom `AsyncUncaughtExceptionHandler` that logs + alerts |
+| Virtual thread pinned to carrier | `synchronized` block or native method inside virtual thread | Replace `synchronized` with `ReentrantLock`. Check `-Djdk.tracePinnedThreads=full` for pinning detection |
+| `CompletableFuture` never completes | Missing `complete()`/`completeExceptionally()` call, or chain broken | Add `.orTimeout(30, SECONDS)` on all futures. Check for unhandled exceptions in `.thenApply()` chains |
+| HikariCP connection leak | Connection acquired but never returned to pool | Set `spring.datasource.hikari.leak-detection-threshold: 60000`. Check for `DataSourceUtils.getConnection()` without `DataSourceUtils.releaseConnection()` |
+| `hikaricp_connections_pending` growing | Connection pool saturated — all connections busy, requests queuing | Increase `maximum-pool-size` (rule: CPU cores × 2 + disk count). Check for long-running transactions holding connections. |
+
+**Thread dump analysis:**
+```sh
+# Capture thread dump (3 dumps, 2s apart — look for threads stuck across all 3)
+jstack <pid> > threaddump1.txt
+sleep 2 && jstack <pid> > threaddump2.txt
+sleep 2 && jstack <pid> > threaddump3.txt
+
+# Quick deadlock detection
+jcmd <pid> Thread.print | grep -A 5 "deadlock"
+
+# Find threads in BLOCKED state across all dumps
+grep "BLOCKED" threaddump*.txt | cut -d'"' -f2 | sort | uniq -c | sort -rn
+```
 
 ## Step 2: Trace Root Cause
 
