@@ -1,6 +1,6 @@
 {
   "name": "devskillslearning-pipeline",
-    "version": "4.5.0",
+  "version": "4.5.0",
   "description": "Complete AI-first Java/Spring Boot SDLC automation — 20 skills: workflow, scaffold, write-code, code-review, write-tests, refactor, diagnose, secure, deploy, document, migrate, github, monitor, design-api, database, resilience, perf-test, release, dependency, api-integrate. Covers REST, gRPC, GraphQL, WebSocket, reactive, Spring Modulith, event-driven, batch, multi-tenancy. Full enterprise stack: OAuth2/JWT, K8s, CI/CD, Problem Details (RFC 7807), WireMock, test slices, read replicas. Guided entry point via workflow skill. See docs/QUICK-REFERENCE.md for intent-based skill finder.",
   "author": {
     "name": "DevSkillsLearning",

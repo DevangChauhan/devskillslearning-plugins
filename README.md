@@ -61,6 +61,16 @@ After running `/reload-plugins` in Claude Code, these slash commands become avai
 | Deploy | `/devskillslearning-pipeline:deploy` | Deployment artifacts: Docker (multi-stage/distroless), K8s manifests, GitHub Actions CI/CD, Helm charts |
 | Document | `/devskillslearning-pipeline:document` | Generate API docs (OpenAPI 3.0, AsyncAPI), C4 architecture diagrams, ADRs, onboarding READMEs |
 | Migrate | `/devskillslearning-pipeline:migrate` | Automate Spring Boot 2→3, javax→jakarta, Java version upgrades, deprecated API replacement |
+| GitHub | `/devskillslearning-pipeline:github` | GitHub project management + PR review via MCP — create epics/stories/tickets |
+| Monitor | `/devskillslearning-pipeline:monitor` | Production observability — metrics, tracing, Loki log aggregation, Grafana, SLIs/SLOs, alerting |
+| Design API | `/devskillslearning-pipeline:design-api` | Contract-first API design — OpenAPI, AsyncAPI, gRPC, GraphQL specs |
+| Database | `/devskillslearning-pipeline:database` | Schema design, query optimization, no-downtime migrations, connection pool tuning |
+| Resilience | `/devskillslearning-pipeline:resilience` | Resilience4j — circuit breaker, retry, timeout, bulkhead, rate limiter |
+| Perf Test | `/devskillslearning-pipeline:perf-test` | k6/Gatling load tests, JFR/profiling, bottleneck identification, capacity planning |
+| Release | `/devskillslearning-pipeline:release` | Semantic versioning, changelogs, release notes, CI release automation |
+| Dependency | `/devskillslearning-pipeline:dependency` | OWASP CVE scanning, version catalogs, BOMs, transitive conflict resolution |
+| API Integrate | `/devskillslearning-pipeline:api-integrate` | OpenAPI client gen, RestClient/WebClient, error mapping, caching, webhook receivers |
+| Workflow | `/devskillslearning-pipeline:workflow` | Guided entry point — describes what you want to do and get routed to the right skill chain |
 
 ## Supported Technology Stack
 

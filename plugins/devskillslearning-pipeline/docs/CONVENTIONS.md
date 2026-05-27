@@ -6,7 +6,7 @@ Reference for AI code generation. This file is an index to the shared pattern do
 
 - `docs/shared/step0-discovery.md` — universal project discovery checklist (run first, every time)
 - `docs/shared/patterns/` — canonical patterns, one file per concern
-- `docs/reference/api-examples.md` — full OpenAPI, AsyncAPI, gRPC, GraphQL spec examples
+- `docs/api-examples.md` — full OpenAPI, AsyncAPI, gRPC, GraphQL spec examples
 
 When a skill needs a pattern, it references the shared file and summarizes the key checks inline. The shared file is the single source of truth.
 
@@ -90,7 +90,7 @@ Skills auto-detect the architecture type. Default to REST microservices if ambig
 
 ### gRPC, GraphQL, Redis, Batch, Multi-Tenancy, i18n, Feature Flags, WebSocket/SSE, Event Sourcing, CDC, Schema Registry, CloudEvents
 
-These patterns are covered in the relevant skills (`design-api`, `database`, `write-code`, `secure`, `resilience`, `monitor`, `deploy`). See each skill's implementation sections for architecture-specific guidance. Full reference content is in `docs/reference/api-examples.md` for spec examples.
+These patterns are covered in the relevant skills (`design-api`, `database`, `write-code`, `secure`, `resilience`, `monitor`, `deploy`). See each skill's implementation sections for architecture-specific guidance. Full reference content is in `docs/api-examples.md` for spec examples.
 
 ---
 
@@ -144,4 +144,4 @@ See the `dependency` skill for: OWASP dependency-check scanning, Gradle version 
 
 ## GitHub Integration
 
-See `docs/SKILL-DEVELOPMENT.md` for the skill development guide and `docs/reference/api-examples.md` for full spec examples. GitHub project management (epics, stories, PR review) is handled by the `github` skill via MCP tools.
+See `docs/SKILL-DEVELOPMENT.md` for the skill development guide and `docs/api-examples.md` for full spec examples. GitHub project management (epics, stories, PR review) is handled by the `github` skill via MCP tools.
